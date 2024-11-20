@@ -6,7 +6,7 @@
 #include <iostream>
 #include <ctime>
 #include <regex>
-#include"nlohmann/json.hpp"
+#include "nlohmann/json.hpp"
 
 // Color definitions
 const std::string RED = "\033[31m";
@@ -40,9 +40,19 @@ struct UserRegistration {
     std::string password;
     std::string fullname;
     std::string email;
-    int phoneno;
+    std::string phoneno;
     time_t joinDate;
 };
+
+//Email And Password and Phoneoe Santosh MTHD
+std::string getHiddenPassword();
+bool isValidUserName(const std::string& username);
+bool isValidDetailedPassword(const std::string& password);
+bool isValidDetailedEmail(const std::string& email);
+bool isValidPhoneNumber(const std::string& phone);
+bool isDuplicateEmail(const std::string& email);
+bool isDuplicatePhone(const std::string& phone);
+
 
 // User class
 class User {
@@ -51,12 +61,11 @@ public:
     std::string email;
     std::string password;
     int userID;
-    int phoneno;
+    std::string phoneno;  // Changed from int to string
     double totalBill;
     bool isLoggedIn;
     time_t joinDate;
     std::vector<Session> sessions;
-
     User(std::string n, std::string e, std::string p, int id);
     void startSession();
     void endSession(double sessionBill);
@@ -77,9 +86,11 @@ public:
     void searchAndEditUser(std::vector<User>& users);
     void searchAndDeleteUser(std::vector<User>& users);
     void viewTotalStats(const std::vector<User>& users);
+
 };
 
 // Function declarations for JSON operations
+void updateUserInJson(const User& user);
 void saveUserToJson(const UserRegistration& user);
 void loadAdminsFromJson(std::vector<Admin>& admins);
 void saveAdminToJson(const std::string& email, const std::string& password);

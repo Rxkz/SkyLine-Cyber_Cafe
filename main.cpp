@@ -35,8 +35,8 @@ int main() {
         case 2: {
             std::string email, password;
             getUserInput("Enter Email:", email);
-            getUserInput("Enter Password:", password);
-
+            centerText("Enter Password:");
+            password = getHiddenPassword();
             bool userFound = false;
             for (auto& user : users) {
                 if (user.email == email && user.password == password) {
@@ -56,8 +56,8 @@ int main() {
         case 3: {
             std::string email, password;
             getUserInput("Enter Admin Email:", email);
-            getUserInput("Enter Password:", password);
-
+            centerText("Enter Password:");
+            password = getHiddenPassword();
             bool adminFound = false;
             for (auto& admin : admins) {
                 if (admin.email == email && admin.password == password) {

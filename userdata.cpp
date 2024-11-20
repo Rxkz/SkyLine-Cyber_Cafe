@@ -1,10 +1,12 @@
+﻿//userdata.cpp
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "userdata.h"
 #include <iostream>
 #include <fstream>
+#include <conio.h>// hide passwords 
 #include <iomanip>
-#include <regex>
+#include <string>
 #include <algorithm>
 #include <ctime>
 
@@ -82,6 +84,169 @@ std::string padString(const std::string& str, int width) {
     return str + std::string(width - str.length(), ' ');
 }
 
+//For Hiding Passwords Santosh MTD
+std::string getHiddenPassword() {
+    std::string password;
+    char ch;
+    while (true) {
+        ch = _getch();
+        if (ch == 13) { // Enter key
+            std::cout << std::endl;
+            break;
+        }
+        else if (ch == 8 && !password.empty()) { // Backspace
+            password.pop_back();
+            std::cout << "\b \b";
+        }
+        else if (ch != 8) {
+            password += ch;
+            std::cout << '*';
+        }
+    }
+    return password;
+}
+
+//function to check a validusername Santosh MTD
+bool isValidUserName(const std::string& username) {
+    if (username.length() < 6 || username.length() > 20) {
+        return false;
+    }
+    if (!isalpha(username[0])) {
+        return false;
+    }
+    for (char ch : username) {
+        if (!(isalnum(ch) || ch == '@' || ch == '.' || ch == '-' || ch == '_')) {
+            return false;
+        }
+    }
+    return true;
+}
+
+//FOR PASSWORD Validtion Santosh MTD
+bool isValidDetailedPassword(const std::string& password) {
+    if (password.length() < 8 || password.length() > 20) {
+        return false;
+    }
+    bool hasUpper = false, hasLower = false, hasDigit = false, hasSpecial = false;
+
+    for (char c : password) {
+        if (c >= 'A' && c <= 'Z') hasUpper = true;
+        else if (c >= 'a' && c <= 'z') hasLower = true;
+        else if (c >= '0' && c <= '9') hasDigit = true;
+        else if (!(c == ' ' || (c >= '0' && c <= '9') ||
+            (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))) {
+            hasSpecial = true;
+        }
+    }
+    return hasUpper && hasLower && hasDigit && hasSpecial;
+}
+
+//For Email Validation Santosh MTD
+bool isValidDetailedEmail(const std::string& email) {
+    std::vector<std::string> validDomains = {
+         "gmail.com", "outlook.com", "example.com", "test.com", "hotmail.com",
+        "live.com", "yahoo.com", "icloud.com", "me.com", "mac.com",
+        "protonmail.com", "protonmail.ch", "zoho.com", "aol.com", "gmx.com",
+        "gmx.de", "gmx.net", "mail.com", "usa.com", "email.com", "consultant.com",
+        "musician.org", "photographer.com", "yandex.com", "yandex.ru",
+        "fastmail.com", "fastmail.fm", "tutanota.com", "tutanota.de",
+        "posteo.de", "runbox.com", "kolabnow.com", "hushmail.com",
+        "mail.ru", "list.ru"
+    };
+
+    size_t atPos = email.find('@');
+    if (atPos == std::string::npos || atPos == 0 || atPos == email.length() - 1) {
+        return false;
+    }
+
+    std::string domain = email.substr(atPos + 1);//
+    return std::find(validDomains.begin(), validDomains.end(), domain) != validDomains.end();
+}
+
+//phoneneo validtion Santosh MTD
+bool isValidPhoneNumber(const std::string& phone) {
+    std::string cleanNumber;
+    for (char c : phone) {
+        if (isdigit(c)) {
+            cleanNumber += c;
+        }
+    }
+
+    // Check for invalid characters
+    for (char c : phone) {
+        if (!isdigit(c) && c != ' ' && c != '-' && c != '+' && c != '(' && c != ')') {
+            return false;
+        }
+    }
+
+    // Check length of actual digits
+    if (cleanNumber.length() < 10 || cleanNumber.length() > 13) {
+        return false;
+    }
+
+    // Verify all cleaned characters are digits
+    for (char c : cleanNumber) {
+        if (!isdigit(c)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool isDuplicateEmail(const std::string& email) {
+    const std::string filename = "User_Registration.json";
+    std::ifstream file(filename);
+
+    if (!file.good()) {
+        return false;  // File doesn't exist, so no duplicates
+    }
+
+    try {
+        nlohmann::json userData = nlohmann::json::parse(file);
+
+        for (const auto& user : userData["users"]) {
+            if (user["email"] == email) {
+                return true;  // Found duplicate email
+            }
+        }
+    }
+    catch (const std::exception& e) {
+        centerText(RED + "Error checking email: " + e.what() + RESET);
+        return false;
+    }
+
+    file.close();
+    return false;
+}
+
+bool isDuplicatePhone(const std::string& phone) {
+    const std::string filename = "User_Registration.json";
+    std::ifstream file(filename);
+
+    if (!file.good()) {
+        return false;  // File doesn't exist, so no duplicates
+    }
+
+    try {
+        nlohmann::json userData = nlohmann::json::parse(file);
+
+        for (const auto& user : userData["users"]) {
+            if (user["phoneno"] == phone) {
+                return true;  // Found duplicate phone
+            }
+        }
+    }
+    catch (const std::exception& e) {
+        centerText(RED + "Error checking phone: " + e.what() + RESET);
+        return false;
+    }
+
+    file.close();
+    return false;
+}
+
+
 void getUserInput(const std::string& prompt, std::string& input) {
     centerText(prompt);
     centerText(""); // Empty line for spacing
@@ -98,7 +263,7 @@ void getUserInput(const std::string& prompt, int& input) {
 }
 
 User::User(std::string n, std::string e, std::string p, int id)
-    : name(n), email(e), password(p), userID(id), totalBill(0.0),
+    : name(n), email(e), password(p), userID(id), phoneno(""), totalBill(0.0),
     isLoggedIn(false), joinDate(time(0)) {}
 
 void User::startSession() {
@@ -195,6 +360,7 @@ void Admin::viewUsersByPaymentStatus(const std::vector<User>& users, bool paid) 
     }
 }
 
+// admin to search and edit a user
 void Admin::searchAndEditUser(std::vector<User>& users) {
     clearConsole();
     std::string searchTerm;
@@ -224,6 +390,7 @@ void Admin::searchAndEditUser(std::vector<User>& users) {
                 getUserInput("Enter new name:", newName);
                 if (!newName.empty()) {
                     user.name = newName;
+                    updateUserInJson(user);  // Add this line
                     centerText(GREEN + "Name updated successfully!" + RESET);
                 }
                 break;
@@ -233,6 +400,7 @@ void Admin::searchAndEditUser(std::vector<User>& users) {
                 getUserInput("Enter new email:", newEmail);
                 if (!newEmail.empty() && isValidEmail(newEmail)) {
                     user.email = newEmail;
+                    updateUserInJson(user);  // Add this line
                     centerText(GREEN + "Email updated successfully!" + RESET);
                 }
                 break;
@@ -242,15 +410,32 @@ void Admin::searchAndEditUser(std::vector<User>& users) {
                 getUserInput("Enter new password (min 8 characters):", newPassword);
                 if (!newPassword.empty() && isValidPassword(newPassword)) {
                     user.password = newPassword;
+                    updateUserInJson(user);  // Add this line
                     centerText(GREEN + "Password updated successfully!" + RESET);
                 }
                 break;
             }
             case 4: {
-                int newPhone;
-                getUserInput("Enter new phone number:", newPhone);
-                user.phoneno = newPhone;
-                centerText(GREEN + "Phone number updated successfully!" + RESET);
+                std::string phoneStr;
+                bool validPhone = false;
+                do {
+                    getUserInput("Enter new phone number (10-13 digits):", phoneStr);
+                    if (!isValidPhoneNumber(phoneStr)) {
+                        centerText(RED + "Invalid phone number format. Please enter a valid number." + RESET);
+                    }
+                    else {
+                        validPhone = true;
+                        std::string cleanNumber;
+                        for (char c : phoneStr) {
+                            if (isdigit(c)) {
+                                cleanNumber += c;
+                            }
+                        }
+                        user.phoneno = cleanNumber;
+                        updateUserInJson(user);  // Add this line
+                        centerText(GREEN + "Phone number updated successfully!" + RESET);
+                    }
+                } while (!validPhone);
                 break;
             }
             case 5:
@@ -263,6 +448,40 @@ void Admin::searchAndEditUser(std::vector<User>& users) {
         }
     }
     centerText(RED + "User not found." + RESET);
+}
+
+
+// admin to search and edit user update function 
+void updateUserInJson(const User& user) {
+    const std::string filename = "User_Registration.json";
+    nlohmann::json userData;
+
+    // Read existing JSON file
+    std::ifstream inFile(filename);
+    if (inFile.good()) {
+        userData = nlohmann::json::parse(inFile);
+    }
+    inFile.close();
+
+    // Find and update the user
+    bool userFound = false;
+    for (auto& jsonUser : userData["users"]) {
+        if (jsonUser["email"] == user.email) {  // Using email as unique identifier
+            jsonUser["fullname"] = user.name;
+            jsonUser["email"] = user.email;
+            jsonUser["password"] = user.password;
+            jsonUser["phoneno"] = user.phoneno;
+            userFound = true;
+            break;
+        }
+    }
+
+    if (userFound) {
+        // Write updated JSON back to file
+        std::ofstream outFile(filename);
+        outFile << userData.dump(2);
+        outFile.close();
+    }
 }
 
 void Admin::searchAndDeleteUser(std::vector<User>& users) {
@@ -389,13 +608,16 @@ void handleUserMenu(User& user) {
     } while (userChoice != 6);
 }
 
+// this was old email verification so istaed of change all the function name in all other pages we just replaced this fuctions implemention to call our accual email validation 
 bool isValidEmail(const std::string& email) {
-    const std::regex pattern(R"((\w+)(\.\w+)*@(\w+)(\.\w+)+)");
-    return std::regex_match(email, pattern);
+
+    return isValidDetailedEmail(email);
+
 }
 
+// this was old Password verification so istaed of change all the function name in all other pages we just replaced this fuctions implemention to call our accual email validation
 bool isValidPassword(const std::string& password) {
-    return password.length() >= 8;
+    return isValidDetailedPassword(password);
 }
 
 void saveUserToJson(const UserRegistration& user) {
@@ -416,7 +638,7 @@ void saveUserToJson(const UserRegistration& user) {
     newUser["password"] = user.password;
     newUser["fullname"] = user.fullname;
     newUser["email"] = user.email;
-    newUser["phoneno"] = user.phoneno;
+    newUser["phoneno"] = user.phoneno;  // Now storing as string
     newUser["joinDate"] = user.joinDate;
 
     userData["users"].push_back(newUser);
@@ -511,27 +733,92 @@ void handleRegistration(std::vector<User>& users, int& userIDCounter) {
     UserRegistration newUser;
     newUser.joinDate = time(0);
 
-    getUserInput("Enter Username:", newUser.username);
+    // Username with validation
+    do {
+        getUserInput("Enter Username (min 6 chars, start with letter, special chars: @.-_ only):", newUser.username);
+        if (!isValidUserName(newUser.username)) {
+            centerText(RED + "Invalid username format. Please try again." + RESET);
+        }
+    } while (!isValidUserName(newUser.username));
 
-    getUserInput("Enter Password (min 8 characters):", newUser.password);
-    while (!isValidPassword(newUser.password)) {
-        centerText(RED + "Password must be at least 8 characters." + RESET);
-        getUserInput("Enter Password (min 8 characters):", newUser.password);
-    }
+    // Password with validation and hiding
+    std::string confirmPassword;
+    do {
+        centerText("Enter Password (min 8 chars, must include uppercase, lowercase, number, special char):");
+        newUser.password = getHiddenPassword();
+
+        if (!isValidDetailedPassword(newUser.password)) {
+            centerText(RED + "Invalid password format. Please try again." + RESET);
+            continue;
+        }
+
+        centerText("Confirm Password:");
+        confirmPassword = getHiddenPassword();
+
+        if (newUser.password != confirmPassword) {
+            centerText(RED + "Passwords do not match. Please try again." + RESET);
+        }
+    } while (!isValidDetailedPassword(newUser.password) || newUser.password != confirmPassword);
 
     getUserInput("Enter Full Name:", newUser.fullname);
 
-    getUserInput("Enter Email:", newUser.email);
-    while (!isValidEmail(newUser.email)) {
-        centerText(RED + "Invalid email format." + RESET);
+    // Email with validation and duplicate check
+    std::string confirmEmail;
+    bool validEmail = false;
+    do {
         getUserInput("Enter Email:", newUser.email);
-    }
+        if (!isValidDetailedEmail(newUser.email)) {
+            centerText(RED + "Invalid email format. Please try again." + RESET);
+            continue;
+        }
 
-    getUserInput("Enter Phone Number:", newUser.phoneno);
+        if (isDuplicateEmail(newUser.email)) {
+            centerText(RED + "Email already registered. Please login or use a different email." + RESET);
+            continue;
+        }
+
+        getUserInput("Confirm Email:", confirmEmail);
+        if (newUser.email != confirmEmail) {
+            centerText(RED + "Emails do not match. Please try again." + RESET);
+            continue;
+        }
+        validEmail = true;
+    } while (!validEmail);
+
+    // Phone number validation with duplicate check
+    std::string phoneStr;
+    bool validPhone = false;
+    do {
+        getUserInput("Enter Phone Number (10-13 digits, can include spaces, -, +, (, )):", phoneStr);
+        if (!isValidPhoneNumber(phoneStr)) {
+            centerText(RED + "Invalid phone number format. Please enter a valid number." + RESET);
+            continue;
+        }
+
+        // Clean the phone number before checking for duplicates
+        std::string cleanNumber;
+        for (char c : phoneStr) {
+            if (isdigit(c)) {
+                cleanNumber += c;
+            }
+        }
+
+        if (isDuplicatePhone(cleanNumber)) {
+            centerText(RED + "Phone number already registered. Please use a different number." + RESET);
+            continue;
+        }
+
+        validPhone = true;
+        newUser.phoneno = cleanNumber;
+    } while (!validPhone);
 
     saveUserToJson(newUser);
     users.emplace_back(newUser.fullname, newUser.email, newUser.password, userIDCounter++);
 }
+
+
+
+
 
 void loadUsersFromJson(std::vector<User>& users, int& userIDCounter) {
     const std::string filename = "User_Registration.json";
@@ -600,12 +887,14 @@ void handleAdminMenu(Admin& admin, std::vector<User>& users, std::vector<Admin>&
 void displayLogo() {
     clearConsole();
     std::vector<std::string> logoLines = {
-        MAGENTA + " _____ _           _       _       " + RESET + "_____                ",
-        MAGENTA + "/ ____| |         | |     | |     " + RESET + "/ ____|               ",
-        MAGENTA + "| (___ | |__   __ _| |_ ___| |__ " + RESET + "| |  __  __ _ _ __ ___  ",
-        MAGENTA + "\\___ \\| '_ \\ / _` | __/ _ \\ '_ \\ " + RESET + "| | |_ |/ _` | '__/ _ \\ ",
-        MAGENTA + "____) | | | | (_| | ||  __/ | | | " + RESET + "|__| | | (_| | | | __/ ",
-        MAGENTA + "|_____/|_| |_|\\__,_|\\__\\___|_| |_|" + RESET + "\\_____|\\__,_|_|  \\___| ",
+        MAGENTA + " _____  _  __ __  _    " + YELLOW + "▲" + MAGENTA + "  _   _  ______ " + RESET,
+        MAGENTA + "/  ___|| |/ / \\ \\| |   " + YELLOW + "/!\\" + MAGENTA + " | \\ | ||  ___|" + RESET,
+        MAGENTA + "\\ `--  |   /   \\ \\ |  " + YELLOW + "/|!|\\" + MAGENTA + "|  \\| || |    " + RESET,
+        MAGENTA + " `--. \\|  /     \\ \\| " + YELLOW + "//|!|\\\\" + MAGENTA + "| . ` || |___ " + RESET,
+        MAGENTA + "/\\__/ /| . \\    _) ) " + YELLOW + " |!| " + MAGENTA + "| |\\  ||  ___| " + RESET,
+        MAGENTA + "\\____/ |_|\\_\\  |___/ " + YELLOW + " |!| " + MAGENTA + "|_| \\_||_____|" + RESET,
+        YELLOW + "                  =====   " + RESET,
+        "",
         GREEN + "Cyber Cafe" + RESET
     };
 
