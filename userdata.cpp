@@ -17,8 +17,11 @@
 #include <windows.h>
 #endif
 
-int userIDCounter = 1; // Add this with your other global variables
+// ============= Global Dec =============
 
+int userIDCounter = 1;
+
+// ============= Display  =============
 void centerText(const std::string& text) {
     const int CONSOLE_WIDTH = 80; // Default console width
     int padding = (CONSOLE_WIDTH - text.length()) / 2;
@@ -89,27 +92,73 @@ std::string padString(const std::string& str, int width) {
     return str + std::string(width - str.length(), ' ');
 }
 
-//For Hiding Passwords Santosh MTD
-std::string getHiddenPassword() {
-    std::string password;
-    char ch;
-    while (true) {
-        ch = _getch();
-        if (ch == 13) { // Enter key
-            std::cout << std::endl;
-            break;
+void displayLogo() {
+    clearConsole();
+    std::vector<std::string> logoLines = {
+        MAGENTA + " _____  _  __ __  _    " + YELLOW + "▲" + MAGENTA + "  _   _  ______ " + RESET,
+        MAGENTA + "/  ___|| |/ / \\ \\| |   " + YELLOW + "/!\\" + MAGENTA + " | \\ | ||  ___|" + RESET,
+        MAGENTA + "\\ `--  |   /   \\ \\ |  " + YELLOW + "/|!|\\" + MAGENTA + "|  \\| || |    " + RESET,
+        MAGENTA + " `--. \\|  /     \\ \\| " + YELLOW + "//|!|\\\\" + MAGENTA + "| . ` || |___ " + RESET,
+        MAGENTA + "/\\__/ /| . \\    _) ) " + YELLOW + " |!| " + MAGENTA + "| |\\  ||  ___| " + RESET,
+        MAGENTA + "\\____/ |_|\\_\\  |___/ " + YELLOW + " |!| " + MAGENTA + "|_| \\_||_____|" + RESET,
+        YELLOW + "                  =====   " + RESET,
+        "",
+        GREEN + "Cyber Cafe" + RESET
+    };
+
+    std::cout << "\n\n";
+    for (const auto& line : logoLines) {
+        centerText(line);
+    }
+    std::cout << "\n";
+    centerText(GREEN + "Welcome to Skyline Cyber Cafe!" + RESET);
+    std::cout << "\n";
+}
+
+void clearConsole() {
+#ifdef _WIN32
+    system("cls");
+#else
+    system("clear");
+#endif
+}
+
+
+// ============= User Sessions  =============
+
+void User::startSession() {
+    Session newSession;
+    newSession.startTime = time(0);
+    sessions.push_back(newSession);
+    isLoggedIn = true;
+    centerText(GREEN + "Session started successfully!" + RESET);
+}
+
+void User::endSession(double sessionBill) {
+    if (!sessions.empty() && isLoggedIn) {
+        sessions.back().endTime = time(0);
+        sessions.back().cost = sessionBill;
+        totalBill += sessionBill;
+        isLoggedIn = false;
+    }
+    centerText(BLUE + "Session ended successfully!" + RESET);
+    centerText("Session Bill: NZD " + std::to_string(sessionBill));
+}
+
+int User::getTotalTime() const {
+    int totalMinutes = 0;
+    for (const auto& session : sessions) {
+        if (session.endTime > 0) {
+            totalMinutes += static_cast<int>(difftime(session.endTime, session.startTime) / 60);
         }
-        else if (ch == 8 && !password.empty()) { // Backspace
-            password.pop_back();
-            std::cout << "\b \b";
-        }
-        else if (ch != 8) {
-            password += ch;
-            std::cout << '*';
+        else if (isLoggedIn) {
+            totalMinutes += static_cast<int>(difftime(time(0), session.startTime) / 60);
         }
     }
-    return password;
+    return totalMinutes;
 }
+
+// ============= Validation  =============
 
 //function to check a validusername Santosh MTD
 bool isValidUserName(const std::string& username) {
@@ -127,23 +176,11 @@ bool isValidUserName(const std::string& username) {
     return true;
 }
 
-//FOR PASSWORD Validtion Santosh MTD
-bool isValidDetailedPassword(const std::string& password) {
-    if (password.length() < 8 || password.length() > 20) {
-        return false;
-    }
-    bool hasUpper = false, hasLower = false, hasDigit = false, hasSpecial = false;
+// this was old email verification so istaed of change all the function name in all other pages we just replaced this fuctions implemention to call our accual email validation 
+bool isValidEmail(const std::string& email) {
 
-    for (char c : password) {
-        if (c >= 'A' && c <= 'Z') hasUpper = true;
-        else if (c >= 'a' && c <= 'z') hasLower = true;
-        else if (c >= '0' && c <= '9') hasDigit = true;
-        else if (!(c == ' ' || (c >= '0' && c <= '9') ||
-            (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))) {
-            hasSpecial = true;
-        }
-    }
-    return hasUpper && hasLower && hasDigit && hasSpecial;
+    return isValidDetailedEmail(email);
+
 }
 
 //For Email Validation Santosh MTD
@@ -200,6 +237,77 @@ bool isValidDetailedEmail(const std::string& email) {
     return std::find(validDomains.begin(), validDomains.end(), domain) != validDomains.end();
 }
 
+bool isDuplicateEmail(const std::string& email) {
+    const std::string filename = "User_Registration.json";
+    std::ifstream file(filename);
+
+    if (!file.good()) {
+        return false;  // File doesn't exist, so no duplicates
+    }
+
+    try {
+        nlohmann::json userData = nlohmann::json::parse(file);
+
+        for (const auto& user : userData["users"]) {
+            if (user["email"] == email) {
+                return true;  // Found duplicate email
+            }
+        }
+    }
+    catch (const std::exception& e) {
+        centerText(RED + "Error checking email: " + e.what() + RESET);
+        return false;
+    }
+
+    file.close();
+    return false;
+}
+
+// this was old Password verification so istaed of change all the function name in all other pages we just replaced this fuctions implemention to call our accual email validation
+bool isValidPassword(const std::string& password) {
+    return isValidDetailedPassword(password);
+}
+//FOR PASSWORD Validtion Santosh MTD
+bool isValidDetailedPassword(const std::string& password) {
+    if (password.length() < 8 || password.length() > 20) {
+        return false;
+    }
+    bool hasUpper = false, hasLower = false, hasDigit = false, hasSpecial = false;
+
+    for (char c : password) {
+        if (c >= 'A' && c <= 'Z') hasUpper = true;
+        else if (c >= 'a' && c <= 'z') hasLower = true;
+        else if (c >= '0' && c <= '9') hasDigit = true;
+        else if (!(c == ' ' || (c >= '0' && c <= '9') ||
+            (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))) {
+            hasSpecial = true;
+        }
+    }
+    return hasUpper && hasLower && hasDigit && hasSpecial;
+}
+
+//For Hiding Passwords Santosh MTD
+std::string getHiddenPassword() {
+    std::string password;
+    char ch;
+    while (true) {
+        ch = _getch();
+        if (ch == 13) { // Enter key
+            std::cout << std::endl;
+            break;
+        }
+        else if (ch == 8 && !password.empty()) { // Backspace
+            password.pop_back();
+            std::cout << "\b \b";
+        }
+        else if (ch != 8) {
+            password += ch;
+            std::cout << '*';
+        }
+    }
+    return password;
+}
+
 //phoneneo validtion Santosh MTD
 bool isValidPhoneNumber(const std::string& phone) {
     std::string cleanNumber;
@@ -230,33 +338,7 @@ bool isValidPhoneNumber(const std::string& phone) {
 
     return true;
 }
-
-bool isDuplicateEmail(const std::string& email) {
-    const std::string filename = "User_Registration.json";
-    std::ifstream file(filename);
-
-    if (!file.good()) {
-        return false;  // File doesn't exist, so no duplicates
-    }
-
-    try {
-        nlohmann::json userData = nlohmann::json::parse(file);
-
-        for (const auto& user : userData["users"]) {
-            if (user["email"] == email) {
-                return true;  // Found duplicate email
-            }
-        }
-    }
-    catch (const std::exception& e) {
-        centerText(RED + "Error checking email: " + e.what() + RESET);
-        return false;
-    }
-
-    file.close();
-    return false;
-}
-
+//duplpicate number
 bool isDuplicatePhone(const std::string& phone) {
     const std::string filename = "User_Registration.json";
     std::ifstream file(filename);
@@ -284,63 +366,357 @@ bool isDuplicatePhone(const std::string& phone) {
 }
 
 
-void getUserInput(const std::string& prompt, std::string& input) {
-    centerText(prompt);
-    centerText(""); // Empty line for spacing
-    std::cout << std::string((80 - 20) / 2, ' ') << "> ";
-    std::getline(std::cin, input);
-}
+// ============= JSON  =============
 
-void getUserInput(const std::string& prompt, int& input) {
-    centerText(prompt);
-    centerText(""); // Empty line for spacing
-    std::cout << std::string((80 - 20) / 2, ' ') << "> ";
-    std::cin >> input;
-    std::cin.ignore();
-}
+void saveUserToJson(const UserRegistration& user) {
+    nlohmann::json userData;
+    const std::string filename = "User_Registration.json";
 
-User::User(std::string n, std::string e, std::string p, int id)
-    : name(n), email(e), password(p), userID(id), phoneno(""), totalBill(0.0),
-    isLoggedIn(false), joinDate(time(0)) {}
-
-void User::startSession() {
-    Session newSession;
-    newSession.startTime = time(0);
-    sessions.push_back(newSession);
-    isLoggedIn = true;
-    centerText(GREEN + "Session started successfully!" + RESET);
-}
-
-void User::endSession(double sessionBill) {
-    if (!sessions.empty() && isLoggedIn) {
-        sessions.back().endTime = time(0);
-        sessions.back().cost = sessionBill;
-        totalBill += sessionBill;
-        isLoggedIn = false;
+    std::ifstream inFile(filename);
+    if (inFile.good()) {
+        userData = nlohmann::json::parse(inFile);
     }
-    centerText(BLUE + "Session ended successfully!" + RESET);
-    centerText("Session Bill: NZD " + std::to_string(sessionBill));
+    else {
+        userData["users"] = nlohmann::json::array();
+    }
+    inFile.close();
+
+    nlohmann::json newUser;
+    newUser["username"] = user.username;
+    newUser["password"] = user.password;
+    newUser["fullname"] = user.fullname;
+    newUser["email"] = user.email;
+    newUser["phoneno"] = user.phoneno;  // Now storing as string
+    newUser["joinDate"] = user.joinDate;
+
+    userData["users"].push_back(newUser);
+
+    std::ofstream outFile(filename);
+    outFile << userData.dump(2);
+    outFile.close();
+
+    centerText(GREEN + "Registration successful! Data saved to " + filename + RESET);
 }
 
-int User::getTotalTime() const {
-    int totalMinutes = 0;
-    for (const auto& session : sessions) {
-        if (session.endTime > 0) {
-            totalMinutes += static_cast<int>(difftime(session.endTime, session.startTime) / 60);
+void handleRegistration(std::vector<User>& users, int& userIDCounter) {
+    clearConsole();
+    UserRegistration newUser;
+    newUser.joinDate = time(0);
+
+    // Username with validation
+    do {
+        getUserInput("Enter Username (min 6 chars, start with letter, special chars: @.-_ only):", newUser.username);
+        if (!isValidUserName(newUser.username)) {
+            centerText(RED + "Invalid username format. Please try again." + RESET);
         }
-        else if (isLoggedIn) {
-            totalMinutes += static_cast<int>(difftime(time(0), session.startTime) / 60);
+    } while (!isValidUserName(newUser.username));
+
+    // Password with validation and hiding
+    std::string confirmPassword;
+    do {
+        centerText("Enter Password (min 8 chars, must include uppercase, lowercase, number, special char):");
+        newUser.password = getHiddenPassword();
+
+        if (!isValidDetailedPassword(newUser.password)) {
+            centerText(RED + "Invalid password format. Please try again." + RESET);
+            continue;
+        }
+
+        centerText("Confirm Password:");
+        confirmPassword = getHiddenPassword();
+
+        if (newUser.password != confirmPassword) {
+            centerText(RED + "Passwords do not match. Please try again." + RESET);
+        }
+    } while (!isValidDetailedPassword(newUser.password) || newUser.password != confirmPassword);
+
+    getUserInput("Enter Full Name:", newUser.fullname);
+
+    // Email with validation and duplicate check
+    std::string confirmEmail;
+    bool validEmail = false;
+    do {
+        getUserInput("Enter Email:", newUser.email);
+        if (!isValidDetailedEmail(newUser.email)) {
+            centerText(RED + "Invalid email format. Please try again." + RESET);
+            continue;
+        }
+
+        if (isDuplicateEmail(newUser.email)) {
+            centerText(RED + "Email already registered. Please login or use a different email." + RESET);
+            continue;
+        }
+
+        getUserInput("Confirm Email:", confirmEmail);
+        if (newUser.email != confirmEmail) {
+            centerText(RED + "Emails do not match. Please try again." + RESET);
+            continue;
+        }
+        validEmail = true;
+    } while (!validEmail);
+
+    // Phone number validation with duplicate check
+    std::string phoneStr;
+    bool validPhone = false;
+    do {
+        getUserInput("Enter Phone Number (10-13 digits, can include spaces, -, +, (, )):", phoneStr);
+        if (!isValidPhoneNumber(phoneStr)) {
+            centerText(RED + "Invalid phone number format. Please enter a valid number." + RESET);
+            continue;
+        }
+
+        // Clean the phone number before checking for duplicates
+        std::string cleanNumber;
+        for (char c : phoneStr) {
+            if (isdigit(c)) {
+                cleanNumber += c;
+            }
+        }
+
+        if (isDuplicatePhone(cleanNumber)) {
+            centerText(RED + "Phone number already registered. Please use a different number." + RESET);
+            continue;
+        }
+
+        validPhone = true;
+        newUser.phoneno = cleanNumber;
+    } while (!validPhone);
+
+    saveUserToJson(newUser);
+    users.emplace_back(newUser.fullname, newUser.email, newUser.password, userIDCounter++);
+}
+
+
+void updateUserInJson(const User& user, const std::string& originalEmail) {
+    const std::string filename = "User_Registration.json";
+
+    try {
+        // Read existing JSON file
+        std::ifstream inFile(filename);
+        if (!inFile.good()) {
+            centerText(RED + "Error: Could not open user file" + RESET);
+            return;
+        }
+
+        // Parse JSON with exception handling
+        nlohmann::json userData;
+        try {
+            userData = nlohmann::json::parse(inFile);
+        }
+        catch (const nlohmann::json::exception& e) {
+            centerText(RED + "Error parsing JSON: " + e.what() + RESET);
+            inFile.close();
+            return;
+        }
+        inFile.close();
+
+        // Validate user data before updating
+        if (!userData.contains("users") || !userData["users"].is_array()) {
+            centerText(RED + "Error: Invalid JSON structure" + RESET);
+            return;
+        }
+
+        // Find and update the user
+        bool userFound = false;
+        for (auto& jsonUser : userData["users"]) {
+            try {
+                if (jsonUser["email"].get<std::string>() == originalEmail) {
+                    // Update fields with size validation
+                    std::string newName = user.name.substr(0, 100); // Limit name to 100 chars
+                    std::string newEmail = user.email.substr(0, 100); // Limit email to 100 chars
+                    std::string newPassword = user.password.substr(0, 50); // Limit password to 50 chars
+                    std::string newPhone = user.phoneno.substr(0, 15); // Limit phone to 15 chars
+
+                    jsonUser["fullname"] = newName;
+                    jsonUser["email"] = newEmail;
+                    jsonUser["password"] = newPassword;
+                    jsonUser["phoneno"] = newPhone;
+                    userFound = true;
+                    break;
+                }
+            }
+            catch (const std::exception& e) {
+                centerText(RED + "Error processing user data: " + e.what() + RESET);
+                continue;
+            }
+        }
+
+        if (!userFound) {
+            centerText(YELLOW + "Warning: User not found in JSON file" + RESET);
+            return;
+        }
+
+        // Write updated JSON back to file
+        std::ofstream outFile(filename);
+        if (!outFile.good()) {
+            centerText(RED + "Error: Could not open file for writing" + RESET);
+            return;
+        }
+
+        try {
+            outFile << userData.dump(2);
+            outFile.close();
+            centerText(GREEN + "User data updated successfully!" + RESET);
+        }
+        catch (const std::exception& e) {
+            centerText(RED + "Error writing to file: " + e.what() + RESET);
+            outFile.close();
+        }
+
+    }
+    catch (const std::exception& e) {
+        centerText(RED + "An unexpected error occurred: " + e.what() + RESET);
+    }
+}
+
+
+void loadAdminsFromJson(std::vector<Admin>& admins) {
+    const std::string filename = "Admin_List.json";
+    std::ifstream file(filename);
+
+    if (!file.good()) {
+        return;
+    }
+
+    try {
+        nlohmann::json adminData = nlohmann::json::parse(file);
+
+        for (const auto& admin : adminData["admins"]) {
+            std::string email = admin["email"];
+            std::string password = admin["password"];
+            bool exists = false;
+            for (const auto& existingAdmin : admins) {
+                if (existingAdmin.email == email) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                admins.emplace_back(email, password);
+            }
         }
     }
-    return totalMinutes;
+    catch (const std::exception& e) {
+        centerText(RED + "Error loading admins: " + e.what() + RESET);
+    }
+    file.close();
 }
 
-bool User::hasPaidBill() const {
-    return std::all_of(sessions.begin(), sessions.end(),
-        [](const Session& s) { return s.isPaid; });
+void saveAdminToJson(const std::string& email, const std::string& password) {
+    nlohmann::json adminData;
+    const std::string filename = "Admin_List.json";
+
+    std::ifstream inFile(filename);
+    if (inFile.good()) {
+        adminData = nlohmann::json::parse(inFile);
+    }
+    else {
+        adminData["admins"] = nlohmann::json::array();
+    }
+    inFile.close();
+
+    nlohmann::json newAdmin;
+    newAdmin["email"] = email;
+    newAdmin["password"] = password;
+
+    adminData["admins"].push_back(newAdmin);
+
+    std::ofstream outFile(filename);
+    outFile << adminData.dump(2);
+    outFile.close();
+
+    centerText(GREEN + "Admin added successfully!" + RESET);
 }
+
+void loadUsersFromJson(std::vector<User>& users, int& userIDCounter) {
+    const std::string filename = "User_Registration.json";
+    std::ifstream file(filename);
+
+    if (!file.good()) {
+        return;
+    }
+
+    try {
+        nlohmann::json userData = nlohmann::json::parse(file);
+        users.clear();
+        userIDCounter = 1;
+
+        for (const auto& user : userData["users"]) {
+            std::string fullname = user["fullname"];
+            std::string email = user["email"];
+            std::string password = user["password"];
+            users.emplace_back(fullname, email, password, userIDCounter++);
+        }
+    }
+    catch (const std::exception& e) {
+        centerText(RED + "Error loading users: " + e.what() + RESET);
+    }
+    file.close();
+}
+
+void handleNewAdminRegistration(std::vector<Admin>& admins) {
+    clearConsole();
+    std::string email, password;
+
+    getUserInput("Enter new admin email:", email);
+    while (!isValidEmail(email)) {
+        centerText(RED + "Invalid email format." + RESET);
+        getUserInput("Enter new admin email:", email);
+    }
+
+    getUserInput("Enter password (min 8 characters):", password);
+    while (!isValidPassword(password)) {
+        centerText(RED + "Password must be at least 8 characters." + RESET);
+        getUserInput("Enter password (min 8 characters):", password);
+    }
+
+    admins.emplace_back(email, password);
+    saveAdminToJson(email, password);
+}
+
+
+// ============= Admin  =============
+
 
 Admin::Admin(std::string e, std::string p) : email(e), password(p) {}
+
+void handleAdminMenu(Admin& admin, std::vector<User>& users, std::vector<Admin>& admins) {
+    int choice;
+    do {
+        std::vector<std::string> menuItems = {
+            "1. View All Users",
+            "2. View Online Users",
+            "3. View Paid Bills",
+            "4. View Unpaid Bills",
+            "5. Search/Edit User",
+            "6. Delete User",
+            "7. System Stats",
+            "8. Add New Admin",
+            "9. Return to Main Menu"
+        };
+
+        displayCenteredMenu(menuItems, "Admin Menu");
+        getUserInput("Enter choice:", choice);
+
+        switch (choice) {
+        case 1: admin.viewAllUsers(users); break;
+        case 2: admin.viewOnlineUsers(users); break;
+        case 3: admin.viewUsersByPaymentStatus(users, true); break;
+        case 4: admin.viewUsersByPaymentStatus(users, false); break;
+        case 5: admin.searchAndEditUser(users); break;
+        case 6: admin.searchAndDeleteUser(users); break;
+        case 7: admin.viewTotalStats(users); break;
+        case 8: handleNewAdminRegistration(admins); break;
+        case 9: centerText(CYAN + "Logging out...\n" + RESET); break;
+        default: centerText(RED + "Invalid choice\n" + RESET);
+        }
+
+        if (choice != 9) {
+            centerText("\nPress Enter to continue...");
+            std::cin.get();
+        }
+    } while (choice != 9);
+}
 
 void Admin::viewAllUsers(const std::vector<User>& users) {
     clearConsole();
@@ -379,44 +755,6 @@ void Admin::viewOnlineUsers(const std::vector<User>& users) {
     }
 }
 
-void Admin::viewUsersByPaymentStatus(const std::vector<User>& users, bool paid) {
-    clearConsole();
-    std::vector<Receipt> receipts = loadReceiptsFromJson();
-
-    centerText(YELLOW + "\n---- Users with " + (paid ? "Paid" : "Unpaid") + " Bills ----" + RESET);
-    bool found = false;
-
-    for (const auto& receipt : receipts) {
-        if (receipt.isPaid == paid) {
-            centerText("User ID: " + std::to_string(receipt.userID));
-            centerText("Name: " + receipt.userName);
-            centerText("Email: " + receipt.userEmail);
-            centerText("Total Amount: NZD " + std::to_string(receipt.totalAmount));
-            centerText("Date: " + std::string(ctime(&receipt.receiptDate)));
-            if (paid) {
-                centerText("Payment Method: " + receipt.paymentMethod);
-            }
-            centerText("Services Used:");
-            for (const auto& service : receipt.services) {
-                std::string serviceDetails = " - " + service.serviceType;
-                if (service.duration > 0) {
-                    serviceDetails += " (" + std::to_string(service.duration) + " minutes)";
-                }
-                else if (service.quantity > 0) {
-                    serviceDetails += " (" + std::to_string(service.quantity) + " pages)";
-                }
-                serviceDetails += ": NZD " + std::to_string(service.cost);
-                centerText(serviceDetails);
-            }
-            centerText("-------------------");
-            found = true;
-        }
-    }
-
-    if (!found) {
-        centerText("No " + std::string(paid ? "paid" : "unpaid") + " bills found.");
-    }
-}
 
 // admin to search and edit a user
 void Admin::searchAndEditUser(std::vector<User>& users) {
@@ -572,90 +910,7 @@ void Admin::searchAndEditUser(std::vector<User>& users) {
     }
 }
 
-
-// admin to search and edit user update function 
-void updateUserInJson(const User& user, const std::string& originalEmail) {
-    const std::string filename = "User_Registration.json";
-
-    try {
-        // Read existing JSON file
-        std::ifstream inFile(filename);
-        if (!inFile.good()) {
-            centerText(RED + "Error: Could not open user file" + RESET);
-            return;
-        }
-
-        // Parse JSON with exception handling
-        nlohmann::json userData;
-        try {
-            userData = nlohmann::json::parse(inFile);
-        }
-        catch (const nlohmann::json::exception& e) {
-            centerText(RED + "Error parsing JSON: " + e.what() + RESET);
-            inFile.close();
-            return;
-        }
-        inFile.close();
-
-        // Validate user data before updating
-        if (!userData.contains("users") || !userData["users"].is_array()) {
-            centerText(RED + "Error: Invalid JSON structure" + RESET);
-            return;
-        }
-
-        // Find and update the user
-        bool userFound = false;
-        for (auto& jsonUser : userData["users"]) {
-            try {
-                if (jsonUser["email"].get<std::string>() == originalEmail) {
-                    // Update fields with size validation
-                    std::string newName = user.name.substr(0, 100); // Limit name to 100 chars
-                    std::string newEmail = user.email.substr(0, 100); // Limit email to 100 chars
-                    std::string newPassword = user.password.substr(0, 50); // Limit password to 50 chars
-                    std::string newPhone = user.phoneno.substr(0, 15); // Limit phone to 15 chars
-
-                    jsonUser["fullname"] = newName;
-                    jsonUser["email"] = newEmail;
-                    jsonUser["password"] = newPassword;
-                    jsonUser["phoneno"] = newPhone;
-                    userFound = true;
-                    break;
-                }
-            }
-            catch (const std::exception& e) {
-                centerText(RED + "Error processing user data: " + e.what() + RESET);
-                continue;
-            }
-        }
-
-        if (!userFound) {
-            centerText(YELLOW + "Warning: User not found in JSON file" + RESET);
-            return;
-        }
-
-        // Write updated JSON back to file
-        std::ofstream outFile(filename);
-        if (!outFile.good()) {
-            centerText(RED + "Error: Could not open file for writing" + RESET);
-            return;
-        }
-
-        try {
-            outFile << userData.dump(2);
-            outFile.close();
-            centerText(GREEN + "User data updated successfully!" + RESET);
-        }
-        catch (const std::exception& e) {
-            centerText(RED + "Error writing to file: " + e.what() + RESET);
-            outFile.close();
-        }
-
-    }
-    catch (const std::exception& e) {
-        centerText(RED + "An unexpected error occurred: " + e.what() + RESET);
-    }
-}
-
+//search and delete user
 void Admin::searchAndDeleteUser(std::vector<User>& users) {
     clearConsole();
     std::string searchTerm;
@@ -729,7 +984,367 @@ void Admin::searchAndDeleteUser(std::vector<User>& users) {
     }
 }
 
+// admin to get bill data 
+std::vector<Receipt> loadReceiptsFromJson() {
+    std::vector<Receipt> receipts;
+    const std::string filename = "Receipts.json";
+    std::ifstream file(filename);
 
+    if (!file.good()) {
+        return receipts;
+    }
+
+    try {
+        nlohmann::json receiptData = nlohmann::json::parse(file);
+        for (const auto& receipt : receiptData["receipts"]) {
+            Receipt r;
+            r.userID = receipt["userID"];
+            r.userName = receipt["userName"];
+            r.userEmail = receipt["userEmail"];
+            r.totalAmount = receipt["totalAmount"];
+            r.receiptDate = receipt["receiptDate"];
+            r.paymentMethod = receipt["paymentMethod"];
+            r.isPaid = receipt["isPaid"];
+
+            // Load services
+            for (const auto& service : receipt["services"]) {
+                ServiceUsage s;
+                s.serviceType = service["type"];
+                s.duration = service["duration"];
+                s.quantity = service["quantity"];
+                s.rate = service["rate"];
+                s.cost = service["cost"];
+                s.timestamp = service["timestamp"];
+                r.services.push_back(s);
+            }
+            receipts.push_back(r);
+        }
+    }
+    catch (const std::exception& e) {
+        centerText(RED + "Error loading receipts: " + e.what() + RESET);
+    }
+    file.close();
+    return receipts;
+}
+
+void Admin::viewUsersByPaymentStatus(const std::vector<User>& users, bool paid) {
+    clearConsole();
+    std::vector<Receipt> receipts = loadReceiptsFromJson();
+
+    centerText(YELLOW + "\n---- Users with " + (paid ? "Paid" : "Unpaid") + " Bills ----" + RESET);
+    bool found = false;
+
+    for (const auto& receipt : receipts) {
+        if (receipt.isPaid == paid) {
+            centerText("User ID: " + std::to_string(receipt.userID));
+            centerText("Name: " + receipt.userName);
+            centerText("Email: " + receipt.userEmail);
+            centerText("Total Amount: NZD " + std::to_string(receipt.totalAmount));
+            centerText("Date: " + std::string(ctime(&receipt.receiptDate)));
+            if (paid) {
+                centerText("Payment Method: " + receipt.paymentMethod);
+            }
+            centerText("Services Used:");
+            for (const auto& service : receipt.services) {
+                std::string serviceDetails = " - " + service.serviceType;
+                if (service.duration > 0) {
+                    serviceDetails += " (" + std::to_string(service.duration) + " minutes)";
+                }
+                else if (service.quantity > 0) {
+                    serviceDetails += " (" + std::to_string(service.quantity) + " pages)";
+                }
+                serviceDetails += ": NZD " + std::to_string(service.cost);
+                centerText(serviceDetails);
+            }
+            centerText("-------------------");
+            found = true;
+        }
+    }
+
+    if (!found) {
+        centerText("No " + std::string(paid ? "paid" : "unpaid") + " bills found.");
+    }
+}
+
+void Admin::viewTotalStats(const std::vector<User>& users) {
+    clearConsole();
+    std::vector<Receipt> receipts = loadReceiptsFromJson();
+
+    // Initialize counters and totals for each service
+    struct ServiceStats {
+        int userCount = 0;
+        int totalDuration = 0;
+        int totalQuantity = 0;
+        double totalRevenue = 0.0;
+    };
+
+    std::map<std::string, ServiceStats> serviceStats;
+    int totalUsers = users.size();
+    int onlineUsers = 0;
+    double totalRevenue = 0.0;
+    int totalTransactions = 0;
+
+    // Count online users
+    for (const auto& user : users) {
+        if (user.isLoggedIn) onlineUsers++;
+    }
+
+    // Process all receipts
+    for (const auto& receipt : receipts) {
+        if (receipt.isPaid) {
+            totalRevenue += receipt.totalAmount;
+            totalTransactions++;
+
+            for (const auto& service : receipt.services) {
+                ServiceStats& stats = serviceStats[service.serviceType];
+                stats.userCount++;
+                stats.totalRevenue += service.cost;
+
+                if (service.duration > 0) {
+                    stats.totalDuration += service.duration;
+                }
+                if (service.quantity > 0) {
+                    stats.totalQuantity += service.quantity;
+                }
+            }
+        }
+    }
+
+    // Display Statistics
+    centerText(CYAN + "\n===== SKYLINE CYBER CAFE SYSTEM STATISTICS =====" + RESET);
+    centerText("----------------------------------------");
+
+    // General Statistics
+    centerText(YELLOW + "General Statistics:" + RESET);
+    centerText("Total Registered Users: " + std::to_string(totalUsers));
+    centerText("Currently Online Users: " + std::to_string(onlineUsers));
+    centerText("Total Completed Transactions: " + std::to_string(totalTransactions));
+    centerText("Total Revenue: $" + std::to_string(totalRevenue));
+    centerText("----------------------------------------");
+
+    // Service-specific Statistics
+    centerText(YELLOW + "Service-wise Statistics:" + RESET);
+
+    // Internet Browsing Stats
+    if (serviceStats.count("Internet Browsing")) {
+        const auto& stats = serviceStats["Internet Browsing"];
+        centerText(GREEN + "\nInternet Browsing:" + RESET);
+        centerText("Total Users Logged-In: " + std::to_string(stats.userCount));
+        centerText("Total Minutes Used: " + std::to_string(stats.totalDuration));
+        centerText("Average Session Length: " +
+            std::to_string(stats.userCount > 0 ? stats.totalDuration / stats.userCount : 0) + " minutes");
+        centerText("Total Revenue: $" + std::to_string(stats.totalRevenue));
+    }
+
+    // Gaming Stats
+    if (serviceStats.count("Gaming")) {
+        const auto& stats = serviceStats["Gaming"];
+        centerText(GREEN + "\nGaming:" + RESET);
+        centerText("Total Users: " + std::to_string(stats.userCount));
+        centerText("Total Gaming Minutes: " + std::to_string(stats.totalDuration));
+        centerText("Average Gaming Session: " +
+            std::to_string(stats.userCount > 0 ? stats.totalDuration / stats.userCount : 0) + " minutes");
+        centerText("Total Revenue: $" + std::to_string(stats.totalRevenue));
+    }
+
+    // Printing Stats
+    if (serviceStats.count("Printing")) {
+        const auto& stats = serviceStats["Printing"];
+        centerText(GREEN + "\nPrinting:" + RESET);
+        centerText("Total Users: " + std::to_string(stats.userCount));
+        centerText("Total Pages Printed: " + std::to_string(stats.totalQuantity));
+        centerText("Average Pages per User: " +
+            std::to_string(stats.userCount > 0 ? stats.totalQuantity / stats.userCount : 0));
+        centerText("Total Revenue: $" + std::to_string(stats.totalRevenue));
+    }
+
+    // Scanning Stats
+    if (serviceStats.count("Scanning")) {
+        const auto& stats = serviceStats["Scanning"];
+        centerText(GREEN + "\nScanning:" + RESET);
+        centerText("Total Users: " + std::to_string(stats.userCount));
+        centerText("Total Pages Scanned: " + std::to_string(stats.totalQuantity));
+        centerText("Average Pages per User: " +
+            std::to_string(stats.userCount > 0 ? stats.totalQuantity / stats.userCount : 0));
+        centerText("Total Revenue: $" + std::to_string(stats.totalRevenue));
+    }
+
+    centerText("\n----------------------------------------");
+}
+
+
+// ============= Payments   =============
+
+bool User::hasPaidBill() const {
+    return std::all_of(sessions.begin(), sessions.end(),
+        [](const Session& s) { return s.isPaid; });
+}
+
+// New payment handling function
+void handlePayment(User& user) {
+    centerText(GREEN + "Your total bill is: NZD " + std::to_string(user.totalBill) + RESET);
+
+    std::vector<std::string> paymentMenuItems = {
+        "1. EFTPOS",
+        "2. Card Payment",
+        "3. Cash",
+        "4. Account Transfer",
+        "5. Cancel Payment"
+    };
+
+    displayCenteredMenu(paymentMenuItems, "Payment Methods");
+
+    int paymentChoice;
+    getUserInput("Choose payment method:", paymentChoice);
+
+    if (paymentChoice >= 1 && paymentChoice <= 4) {
+        char confirm;
+        centerText("Are you sure you want to proceed with this payment method? (y/n):");
+        std::cin >> confirm;
+        std::cin.ignore();
+
+        if (confirm == 'y' || confirm == 'Y') {
+            switch (paymentChoice) {
+            case 1: { // EFTPOS
+                centerText("Processing payment...");
+                // Simulate processing time
+                std::this_thread::sleep_for(std::chrono::seconds(3));
+                centerText(GREEN + "Your payment via EFTPOS has been completed successfully." + RESET);
+                centerText(GREEN + "Thank you for visiting Skyline Cyber Café!" + RESET);
+                user.totalBill = 0.0;
+                break;
+            }
+            case 2: { // Card Payment
+                if (handleCardPayment()) {
+                    centerText(GREEN + "Payment successful! Thank you for choosing Skyline Cyber Cafe!" + RESET);
+                    user.totalBill = 0.0;
+                }
+                break;
+            }
+            case 3: // Cash
+                centerText("Please proceed to the counter to pay your bill.");
+                break;
+            case 4: { // Account Transfer
+                centerText(BLUE + "Processing account transfer..." + RESET);
+                // Simulate processing time
+                std::this_thread::sleep_for(std::chrono::seconds(5));
+                centerText(GREEN + "Payment received via account transfer." + RESET);
+                centerText(GREEN + "Thank you for choosing Skyline Cyber Cafe!" + RESET);
+                user.totalBill = 0.0;
+                break;
+            }
+            }
+        }
+        else {
+            centerText(RED + "Payment cancelled." + RESET);
+        }
+    }
+    else if (paymentChoice != 5) {
+        centerText(RED + "Invalid payment method." + RESET);
+    }
+}
+
+// Helper function for card payment processing
+bool handleCardPayment() {
+    std::string cardNumber, cardHolder, expiryDate, cvv;
+    bool validInput;
+
+    // Card Number validation
+    do {
+        getUserInput("Enter Card Number (16 digits):", cardNumber);
+        if (cardNumber.length() == 16 && std::all_of(cardNumber.begin(), cardNumber.end(), ::isdigit)) {
+            std::string formattedCard = cardNumber.substr(0, 2) + "-" +
+                cardNumber.substr(2, 4) + "-" +
+                cardNumber.substr(6, 7) + "-" +
+                cardNumber.substr(13, 3);
+            centerText(YELLOW + "Confirm card number: " + formattedCard + " (y/n):" + RESET);
+            char confirm;
+            std::cin >> confirm;
+            std::cin.ignore();
+            validInput = (confirm == 'y' || confirm == 'Y');
+        }
+        else {
+            centerText(RED + "Invalid card number format." + RESET);
+            validInput = false;
+        }
+    } while (!validInput);
+
+    // Cardholder Name
+    do {
+        getUserInput("Enter Cardholder Name:", cardHolder);
+        centerText(YELLOW + "Confirm name: " + cardHolder + " (y/n):" + RESET);
+        char confirm;
+        std::cin >> confirm;
+        std::cin.ignore();
+        validInput = (confirm == 'y' || confirm == 'Y');
+    } while (!validInput);
+
+    // Expiry Date
+    do {
+        getUserInput("Enter Expiry Date (MM/YY):", expiryDate);
+        if (expiryDate.length() == 5 && expiryDate[2] == '/' &&
+            std::isdigit(expiryDate[0]) && std::isdigit(expiryDate[1]) &&
+            std::isdigit(expiryDate[3]) && std::isdigit(expiryDate[4])) {
+            int month = std::stoi(expiryDate.substr(0, 2));
+            if (month >= 1 && month <= 12) {
+                centerText(YELLOW + "Confirm expiry date: " + expiryDate + " (y/n):" + RESET);
+                char confirm;
+                std::cin >> confirm;
+                std::cin.ignore();
+                validInput = (confirm == 'y' || confirm == 'Y');
+            }
+            else {
+                centerText(RED + "Invalid month." + RESET);
+                validInput = false;
+            }
+        }
+        else {
+            centerText(RED + "Invalid date format." + RESET);
+            validInput = false;
+        }
+    } while (!validInput);
+
+    // CVV
+    do {
+        getUserInput("Enter CVV (3 digits):", cvv);
+        if (cvv.length() == 3 && cvv != "000" && std::all_of(cvv.begin(), cvv.end(), ::isdigit)) {
+            centerText(YELLOW + "Confirm CVV: " + cvv + " (y/n):" + RESET);
+            char confirm;
+            std::cin >> confirm;
+            std::cin.ignore();
+            validInput = (confirm == 'y' || confirm == 'Y');
+        }
+        else {
+            centerText(RED + "Invalid CVV." + RESET);
+            validInput = false;
+        }
+    } while (!validInput);
+
+    centerText("Processing payment...");
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    return true;
+}
+
+
+// ============= User input and menu   =============
+User::User(std::string n, std::string e, std::string p, int id)
+    : name(n), email(e), password(p), userID(id), phoneno(""), totalBill(0.0),
+    isLoggedIn(false), joinDate(time(0)) {}
+
+void getUserInput(const std::string& prompt, int& input) {
+    centerText(prompt);
+    centerText(""); // Empty line for spacing
+    std::cout << std::string((80 - 20) / 2, ' ') << "> ";
+    std::cin >> input;
+    std::cin.ignore();
+}
+
+void getUserInput(const std::string& prompt, std::string& input) {
+    centerText(prompt);
+    centerText(""); // Empty line for spacing
+    std::cout << std::string((80 - 20) / 2, ' ') << "> ";
+    std::getline(std::cin, input);
+}
 
 void handleUserMenu(User& user) {
     bool logoutPermitted = false;
@@ -1000,430 +1615,9 @@ void handleUserMenu(User& user) {
     } while (userChoice != 6 || !logoutPermitted);
 }
 
-// New payment handling function
-void handlePayment(User& user) {
-    centerText(GREEN + "Your total bill is: NZD " + std::to_string(user.totalBill) + RESET);
 
-    std::vector<std::string> paymentMenuItems = {
-        "1. EFTPOS",
-        "2. Card Payment",
-        "3. Cash",
-        "4. Account Transfer",
-        "5. Cancel Payment"
-    };
+// ============= Receipts   =============
 
-    displayCenteredMenu(paymentMenuItems, "Payment Methods");
-
-    int paymentChoice;
-    getUserInput("Choose payment method:", paymentChoice);
-
-    if (paymentChoice >= 1 && paymentChoice <= 4) {
-        char confirm;
-        centerText("Are you sure you want to proceed with this payment method? (y/n):");
-        std::cin >> confirm;
-        std::cin.ignore();
-
-        if (confirm == 'y' || confirm == 'Y') {
-            switch (paymentChoice) {
-            case 1: { // EFTPOS
-                centerText("Processing payment...");
-                // Simulate processing time
-                std::this_thread::sleep_for(std::chrono::seconds(3));
-                centerText(GREEN + "Your payment via EFTPOS has been completed successfully." + RESET);
-                centerText(GREEN + "Thank you for visiting Skyline Cyber Café!" + RESET);
-                user.totalBill = 0.0;
-                break;
-            }
-            case 2: { // Card Payment
-                if (handleCardPayment()) {
-                    centerText(GREEN + "Payment successful! Thank you for choosing Skyline Cyber Cafe!" + RESET);
-                    user.totalBill = 0.0;
-                }
-                break;
-            }
-            case 3: // Cash
-                centerText("Please proceed to the counter to pay your bill.");
-                break;
-            case 4: { // Account Transfer
-                centerText(BLUE + "Processing account transfer..." + RESET);
-                // Simulate processing time
-                std::this_thread::sleep_for(std::chrono::seconds(5));
-                centerText(GREEN + "Payment received via account transfer." + RESET);
-                centerText(GREEN + "Thank you for choosing Skyline Cyber Cafe!" + RESET);
-                user.totalBill = 0.0;
-                break;
-            }
-            }
-        }
-        else {
-            centerText(RED + "Payment cancelled." + RESET);
-        }
-    }
-    else if (paymentChoice != 5) {
-        centerText(RED + "Invalid payment method." + RESET);
-    }
-}
-
-// Helper function for card payment processing
-bool handleCardPayment() {
-    std::string cardNumber, cardHolder, expiryDate, cvv;
-    bool validInput;
-
-    // Card Number validation
-    do {
-        getUserInput("Enter Card Number (16 digits):", cardNumber);
-        if (cardNumber.length() == 16 && std::all_of(cardNumber.begin(), cardNumber.end(), ::isdigit)) {
-            std::string formattedCard = cardNumber.substr(0, 2) + "-" +
-                cardNumber.substr(2, 4) + "-" +
-                cardNumber.substr(6, 7) + "-" +
-                cardNumber.substr(13, 3);
-            centerText(YELLOW + "Confirm card number: " + formattedCard + " (y/n):" + RESET);
-            char confirm;
-            std::cin >> confirm;
-            std::cin.ignore();
-            validInput = (confirm == 'y' || confirm == 'Y');
-        }
-        else {
-            centerText(RED + "Invalid card number format." + RESET);
-            validInput = false;
-        }
-    } while (!validInput);
-
-    // Cardholder Name
-    do {
-        getUserInput("Enter Cardholder Name:", cardHolder);
-        centerText(YELLOW + "Confirm name: " + cardHolder + " (y/n):" + RESET);
-        char confirm;
-        std::cin >> confirm;
-        std::cin.ignore();
-        validInput = (confirm == 'y' || confirm == 'Y');
-    } while (!validInput);
-
-    // Expiry Date
-    do {
-        getUserInput("Enter Expiry Date (MM/YY):", expiryDate);
-        if (expiryDate.length() == 5 && expiryDate[2] == '/' &&
-            std::isdigit(expiryDate[0]) && std::isdigit(expiryDate[1]) &&
-            std::isdigit(expiryDate[3]) && std::isdigit(expiryDate[4])) {
-            int month = std::stoi(expiryDate.substr(0, 2));
-            if (month >= 1 && month <= 12) {
-                centerText(YELLOW + "Confirm expiry date: " + expiryDate + " (y/n):" + RESET);
-                char confirm;
-                std::cin >> confirm;
-                std::cin.ignore();
-                validInput = (confirm == 'y' || confirm == 'Y');
-            }
-            else {
-                centerText(RED + "Invalid month." + RESET);
-                validInput = false;
-            }
-        }
-        else {
-            centerText(RED + "Invalid date format." + RESET);
-            validInput = false;
-        }
-    } while (!validInput);
-
-    // CVV
-    do {
-        getUserInput("Enter CVV (3 digits):", cvv);
-        if (cvv.length() == 3 && cvv != "000" && std::all_of(cvv.begin(), cvv.end(), ::isdigit)) {
-            centerText(YELLOW + "Confirm CVV: " + cvv + " (y/n):" + RESET);
-            char confirm;
-            std::cin >> confirm;
-            std::cin.ignore();
-            validInput = (confirm == 'y' || confirm == 'Y');
-        }
-        else {
-            centerText(RED + "Invalid CVV." + RESET);
-            validInput = false;
-        }
-    } while (!validInput);
-
-    centerText("Processing payment...");
-    std::this_thread::sleep_for(std::chrono::seconds(3));
-    return true;
-}
-
-// this was old email verification so istaed of change all the function name in all other pages we just replaced this fuctions implemention to call our accual email validation 
-bool isValidEmail(const std::string& email) {
-
-    return isValidDetailedEmail(email);
-
-}
-
-// this was old Password verification so istaed of change all the function name in all other pages we just replaced this fuctions implemention to call our accual email validation
-bool isValidPassword(const std::string& password) {
-    return isValidDetailedPassword(password);
-}
-
-void saveUserToJson(const UserRegistration& user) {
-    nlohmann::json userData;
-    const std::string filename = "User_Registration.json";
-
-    std::ifstream inFile(filename);
-    if (inFile.good()) {
-        userData = nlohmann::json::parse(inFile);
-    }
-    else {
-        userData["users"] = nlohmann::json::array();
-    }
-    inFile.close();
-
-    nlohmann::json newUser;
-    newUser["username"] = user.username;
-    newUser["password"] = user.password;
-    newUser["fullname"] = user.fullname;
-    newUser["email"] = user.email;
-    newUser["phoneno"] = user.phoneno;  // Now storing as string
-    newUser["joinDate"] = user.joinDate;
-
-    userData["users"].push_back(newUser);
-
-    std::ofstream outFile(filename);
-    outFile << userData.dump(2);
-    outFile.close();
-
-    centerText(GREEN + "Registration successful! Data saved to " + filename + RESET);
-}
-
-void loadAdminsFromJson(std::vector<Admin>& admins) {
-    const std::string filename = "Admin_List.json";
-    std::ifstream file(filename);
-
-    if (!file.good()) {
-        return;
-    }
-
-    try {
-        nlohmann::json adminData = nlohmann::json::parse(file);
-
-        for (const auto& admin : adminData["admins"]) {
-            std::string email = admin["email"];
-            std::string password = admin["password"];
-            bool exists = false;
-            for (const auto& existingAdmin : admins) {
-                if (existingAdmin.email == email) {
-                    exists = true;
-                    break;
-                }
-            }
-            if (!exists) {
-                admins.emplace_back(email, password);
-            }
-        }
-    }
-    catch (const std::exception& e) {
-        centerText(RED + "Error loading admins: " + e.what() + RESET);
-    }
-    file.close();
-}
-
-
-void saveAdminToJson(const std::string& email, const std::string& password) {
-    nlohmann::json adminData;
-    const std::string filename = "Admin_List.json";
-
-    std::ifstream inFile(filename);
-    if (inFile.good()) {
-        adminData = nlohmann::json::parse(inFile);
-    }
-    else {
-        adminData["admins"] = nlohmann::json::array();
-    }
-    inFile.close();
-
-    nlohmann::json newAdmin;
-    newAdmin["email"] = email;
-    newAdmin["password"] = password;
-
-    adminData["admins"].push_back(newAdmin);
-
-    std::ofstream outFile(filename);
-    outFile << adminData.dump(2);
-    outFile.close();
-
-    centerText(GREEN + "Admin added successfully!" + RESET);
-}
-
-void handleNewAdminRegistration(std::vector<Admin>& admins) {
-    clearConsole();
-    std::string email, password;
-
-    getUserInput("Enter new admin email:", email);
-    while (!isValidEmail(email)) {
-        centerText(RED + "Invalid email format." + RESET);
-        getUserInput("Enter new admin email:", email);
-    }
-
-    getUserInput("Enter password (min 8 characters):", password);
-    while (!isValidPassword(password)) {
-        centerText(RED + "Password must be at least 8 characters." + RESET);
-        getUserInput("Enter password (min 8 characters):", password);
-    }
-
-    admins.emplace_back(email, password);
-    saveAdminToJson(email, password);
-}
-
-void handleRegistration(std::vector<User>& users, int& userIDCounter) {
-    clearConsole();
-    UserRegistration newUser;
-    newUser.joinDate = time(0);
-
-    // Username with validation
-    do {
-        getUserInput("Enter Username (min 6 chars, start with letter, special chars: @.-_ only):", newUser.username);
-        if (!isValidUserName(newUser.username)) {
-            centerText(RED + "Invalid username format. Please try again." + RESET);
-        }
-    } while (!isValidUserName(newUser.username));
-
-    // Password with validation and hiding
-    std::string confirmPassword;
-    do {
-        centerText("Enter Password (min 8 chars, must include uppercase, lowercase, number, special char):");
-        newUser.password = getHiddenPassword();
-
-        if (!isValidDetailedPassword(newUser.password)) {
-            centerText(RED + "Invalid password format. Please try again." + RESET);
-            continue;
-        }
-
-        centerText("Confirm Password:");
-        confirmPassword = getHiddenPassword();
-
-        if (newUser.password != confirmPassword) {
-            centerText(RED + "Passwords do not match. Please try again." + RESET);
-        }
-    } while (!isValidDetailedPassword(newUser.password) || newUser.password != confirmPassword);
-
-    getUserInput("Enter Full Name:", newUser.fullname);
-
-    // Email with validation and duplicate check
-    std::string confirmEmail;
-    bool validEmail = false;
-    do {
-        getUserInput("Enter Email:", newUser.email);
-        if (!isValidDetailedEmail(newUser.email)) {
-            centerText(RED + "Invalid email format. Please try again." + RESET);
-            continue;
-        }
-
-        if (isDuplicateEmail(newUser.email)) {
-            centerText(RED + "Email already registered. Please login or use a different email." + RESET);
-            continue;
-        }
-
-        getUserInput("Confirm Email:", confirmEmail);
-        if (newUser.email != confirmEmail) {
-            centerText(RED + "Emails do not match. Please try again." + RESET);
-            continue;
-        }
-        validEmail = true;
-    } while (!validEmail);
-
-    // Phone number validation with duplicate check
-    std::string phoneStr;
-    bool validPhone = false;
-    do {
-        getUserInput("Enter Phone Number (10-13 digits, can include spaces, -, +, (, )):", phoneStr);
-        if (!isValidPhoneNumber(phoneStr)) {
-            centerText(RED + "Invalid phone number format. Please enter a valid number." + RESET);
-            continue;
-        }
-
-        // Clean the phone number before checking for duplicates
-        std::string cleanNumber;
-        for (char c : phoneStr) {
-            if (isdigit(c)) {
-                cleanNumber += c;
-            }
-        }
-
-        if (isDuplicatePhone(cleanNumber)) {
-            centerText(RED + "Phone number already registered. Please use a different number." + RESET);
-            continue;
-        }
-
-        validPhone = true;
-        newUser.phoneno = cleanNumber;
-    } while (!validPhone);
-
-    saveUserToJson(newUser);
-    users.emplace_back(newUser.fullname, newUser.email, newUser.password, userIDCounter++);
-}
-
-
-
-
-
-void loadUsersFromJson(std::vector<User>& users, int& userIDCounter) {
-    const std::string filename = "User_Registration.json";
-    std::ifstream file(filename);
-
-    if (!file.good()) {
-        return;
-    }
-
-    try {
-        nlohmann::json userData = nlohmann::json::parse(file);
-        users.clear();
-        userIDCounter = 1;
-
-        for (const auto& user : userData["users"]) {
-            std::string fullname = user["fullname"];
-            std::string email = user["email"];
-            std::string password = user["password"];
-            users.emplace_back(fullname, email, password, userIDCounter++);
-        }
-    }
-    catch (const std::exception& e) {
-        centerText(RED + "Error loading users: " + e.what() + RESET);
-    }
-    file.close();
-}
-
-void handleAdminMenu(Admin& admin, std::vector<User>& users, std::vector<Admin>& admins) {
-    int choice;
-    do {
-        std::vector<std::string> menuItems = {
-            "1. View All Users",
-            "2. View Online Users",
-            "3. View Paid Bills",
-            "4. View Unpaid Bills",
-            "5. Search/Edit User",
-            "6. Delete User",
-            "7. System Stats",
-            "8. Add New Admin",
-            "9. Return to Main Menu"
-        };
-
-        displayCenteredMenu(menuItems, "Admin Menu");
-        getUserInput("Enter choice:", choice);
-
-        switch (choice) {
-        case 1: admin.viewAllUsers(users); break;
-        case 2: admin.viewOnlineUsers(users); break;
-        case 3: admin.viewUsersByPaymentStatus(users, true); break;
-        case 4: admin.viewUsersByPaymentStatus(users, false); break;
-        case 5: admin.searchAndEditUser(users); break;
-        case 6: admin.searchAndDeleteUser(users); break;
-        case 7: admin.viewTotalStats(users); break;
-        case 8: handleNewAdminRegistration(admins); break;
-        case 9: centerText(CYAN + "Logging out...\n" + RESET); break;
-        default: centerText(RED + "Invalid choice\n" + RESET);
-        }
-
-        if (choice != 9) {
-            centerText("\nPress Enter to continue...");
-            std::cin.get();
-        }
-    } while (choice != 9);
-}
-
-
-// receipt
 void saveReceiptToJson(const Receipt& receipt) {
     nlohmann::json receiptData;
     const std::string filename = "Receipts.json";
@@ -1536,7 +1730,7 @@ void displayInvoice(const std::vector<ServiceUsage>& services, double totalAmoun
     centerText("========================================");
 }
 
-// Add this function to handle email confirmation and sending
+
 void handleReceiptEmail(const Receipt& receipt) {
     char emailChoice;
     centerText("\nWould you like a copy of the receipt emailed to " + receipt.userEmail + "? (y/n):");
@@ -1553,184 +1747,4 @@ void handleReceiptEmail(const Receipt& receipt) {
     centerText(GREEN + "\nThank you for choosing Skyline Cyber Cafe!" + RESET);
     centerText(CYAN + "We hope to see you again soon!" + RESET);
     std::this_thread::sleep_for(std::chrono::seconds(2));
-}
-
-// admin to get bill data 
-std::vector<Receipt> loadReceiptsFromJson() {
-    std::vector<Receipt> receipts;
-    const std::string filename = "Receipts.json";
-    std::ifstream file(filename);
-
-    if (!file.good()) {
-        return receipts;
-    }
-
-    try {
-        nlohmann::json receiptData = nlohmann::json::parse(file);
-        for (const auto& receipt : receiptData["receipts"]) {
-            Receipt r;
-            r.userID = receipt["userID"];
-            r.userName = receipt["userName"];
-            r.userEmail = receipt["userEmail"];
-            r.totalAmount = receipt["totalAmount"];
-            r.receiptDate = receipt["receiptDate"];
-            r.paymentMethod = receipt["paymentMethod"];
-            r.isPaid = receipt["isPaid"];
-
-            // Load services
-            for (const auto& service : receipt["services"]) {
-                ServiceUsage s;
-                s.serviceType = service["type"];
-                s.duration = service["duration"];
-                s.quantity = service["quantity"];
-                s.rate = service["rate"];
-                s.cost = service["cost"];
-                s.timestamp = service["timestamp"];
-                r.services.push_back(s);
-            }
-            receipts.push_back(r);
-        }
-    }
-    catch (const std::exception& e) {
-        centerText(RED + "Error loading receipts: " + e.what() + RESET);
-    }
-    file.close();
-    return receipts;
-}
-
-void Admin::viewTotalStats(const std::vector<User>& users) {
-    clearConsole();
-    std::vector<Receipt> receipts = loadReceiptsFromJson();
-
-    // Initialize counters and totals for each service
-    struct ServiceStats {
-        int userCount = 0;
-        int totalDuration = 0;
-        int totalQuantity = 0;
-        double totalRevenue = 0.0;
-    };
-
-    std::map<std::string, ServiceStats> serviceStats;
-    int totalUsers = users.size();
-    int onlineUsers = 0;
-    double totalRevenue = 0.0;
-    int totalTransactions = 0;
-
-    // Count online users
-    for (const auto& user : users) {
-        if (user.isLoggedIn) onlineUsers++;
-    }
-
-    // Process all receipts
-    for (const auto& receipt : receipts) {
-        if (receipt.isPaid) {
-            totalRevenue += receipt.totalAmount;
-            totalTransactions++;
-
-            for (const auto& service : receipt.services) {
-                ServiceStats& stats = serviceStats[service.serviceType];
-                stats.userCount++;
-                stats.totalRevenue += service.cost;
-
-                if (service.duration > 0) {
-                    stats.totalDuration += service.duration;
-                }
-                if (service.quantity > 0) {
-                    stats.totalQuantity += service.quantity;
-                }
-            }
-        }
-    }
-
-    // Display Statistics
-    centerText(CYAN + "\n===== SKYLINE CYBER CAFE SYSTEM STATISTICS =====" + RESET);
-    centerText("----------------------------------------");
-
-    // General Statistics
-    centerText(YELLOW + "General Statistics:" + RESET);
-    centerText("Total Registered Users: " + std::to_string(totalUsers));
-    centerText("Currently Online Users: " + std::to_string(onlineUsers));
-    centerText("Total Completed Transactions: " + std::to_string(totalTransactions));
-    centerText("Total Revenue: $" + std::to_string(totalRevenue));
-    centerText("----------------------------------------");
-
-    // Service-specific Statistics
-    centerText(YELLOW + "Service-wise Statistics:" + RESET);
-
-    // Internet Browsing Stats
-    if (serviceStats.count("Internet Browsing")) {
-        const auto& stats = serviceStats["Internet Browsing"];
-        centerText(GREEN + "\nInternet Browsing:" + RESET);
-        centerText("Total Users Logged-In: " + std::to_string(stats.userCount));
-        centerText("Total Minutes Used: " + std::to_string(stats.totalDuration));
-        centerText("Average Session Length: " +
-            std::to_string(stats.userCount > 0 ? stats.totalDuration / stats.userCount : 0) + " minutes");
-        centerText("Total Revenue: $" + std::to_string(stats.totalRevenue));
-    }
-
-    // Gaming Stats
-    if (serviceStats.count("Gaming")) {
-        const auto& stats = serviceStats["Gaming"];
-        centerText(GREEN + "\nGaming:" + RESET);
-        centerText("Total Users: " + std::to_string(stats.userCount));
-        centerText("Total Gaming Minutes: " + std::to_string(stats.totalDuration));
-        centerText("Average Gaming Session: " +
-            std::to_string(stats.userCount > 0 ? stats.totalDuration / stats.userCount : 0) + " minutes");
-        centerText("Total Revenue: $" + std::to_string(stats.totalRevenue));
-    }
-
-    // Printing Stats
-    if (serviceStats.count("Printing")) {
-        const auto& stats = serviceStats["Printing"];
-        centerText(GREEN + "\nPrinting:" + RESET);
-        centerText("Total Users: " + std::to_string(stats.userCount));
-        centerText("Total Pages Printed: " + std::to_string(stats.totalQuantity));
-        centerText("Average Pages per User: " +
-            std::to_string(stats.userCount > 0 ? stats.totalQuantity / stats.userCount : 0));
-        centerText("Total Revenue: $" + std::to_string(stats.totalRevenue));
-    }
-
-    // Scanning Stats
-    if (serviceStats.count("Scanning")) {
-        const auto& stats = serviceStats["Scanning"];
-        centerText(GREEN + "\nScanning:" + RESET);
-        centerText("Total Users: " + std::to_string(stats.userCount));
-        centerText("Total Pages Scanned: " + std::to_string(stats.totalQuantity));
-        centerText("Average Pages per User: " +
-            std::to_string(stats.userCount > 0 ? stats.totalQuantity / stats.userCount : 0));
-        centerText("Total Revenue: $" + std::to_string(stats.totalRevenue));
-    }
-
-    centerText("\n----------------------------------------");
-}
-
-void displayLogo() {
-    clearConsole();
-    std::vector<std::string> logoLines = {
-        MAGENTA + " _____  _  __ __  _    " + YELLOW + "▲" + MAGENTA + "  _   _  ______ " + RESET,
-        MAGENTA + "/  ___|| |/ / \\ \\| |   " + YELLOW + "/!\\" + MAGENTA + " | \\ | ||  ___|" + RESET,
-        MAGENTA + "\\ `--  |   /   \\ \\ |  " + YELLOW + "/|!|\\" + MAGENTA + "|  \\| || |    " + RESET,
-        MAGENTA + " `--. \\|  /     \\ \\| " + YELLOW + "//|!|\\\\" + MAGENTA + "| . ` || |___ " + RESET,
-        MAGENTA + "/\\__/ /| . \\    _) ) " + YELLOW + " |!| " + MAGENTA + "| |\\  ||  ___| " + RESET,
-        MAGENTA + "\\____/ |_|\\_\\  |___/ " + YELLOW + " |!| " + MAGENTA + "|_| \\_||_____|" + RESET,
-        YELLOW + "                  =====   " + RESET,
-        "",
-        GREEN + "Cyber Cafe" + RESET
-    };
-
-    std::cout << "\n\n";
-    for (const auto& line : logoLines) {
-        centerText(line);
-    }
-    std::cout << "\n";
-    centerText(GREEN + "Welcome to Skyline Cyber Cafe!" + RESET);
-    std::cout << "\n";
-}
-
-void clearConsole() {
-#ifdef _WIN32
-    system("cls");
-#else
-    system("clear");
-#endif
 }
