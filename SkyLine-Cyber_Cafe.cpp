@@ -18,6 +18,10 @@ const string BLUE = "\033[34m";
 const string CYAN = "\033[36m";
 const string MAGENTA = "\033[35m";
 
+
+
+
+
 // Function to clear console
 void clearConsole() {
 #ifdef _WIN32
