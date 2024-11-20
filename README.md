@@ -4,6 +4,10 @@ A comprehensive billing and management system for Skyline Cyber Cafe, designed t
 
 ![image](https://github.com/user-attachments/assets/dafb5464-d2ba-4c26-a9c4-3e4873970d53)
 
+##Flow Chart
+![flow](https://github.com/user-attachments/assets/19ba4fd8-5b01-4a28-aacc-4d64a515d123)
+
+
 
 ## Overview
 
