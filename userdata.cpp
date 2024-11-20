@@ -384,13 +384,16 @@ void Admin::searchAndEditUser(std::vector<User>& users) {
             int choice;
             getUserInput("What would you like to edit? (1-5):", choice);
 
+            // Store original email for user identification
+            std::string originalEmail = user.email;
+
             switch (choice) {
             case 1: {
                 std::string newName;
                 getUserInput("Enter new name:", newName);
                 if (!newName.empty()) {
                     user.name = newName;
-                    updateUserInJson(user);  // Add this line
+                    updateUserInJson(user, originalEmail);
                     centerText(GREEN + "Name updated successfully!" + RESET);
                 }
                 break;
@@ -399,9 +402,21 @@ void Admin::searchAndEditUser(std::vector<User>& users) {
                 std::string newEmail;
                 getUserInput("Enter new email:", newEmail);
                 if (!newEmail.empty() && isValidEmail(newEmail)) {
-                    user.email = newEmail;
-                    updateUserInJson(user);  // Add this line
-                    centerText(GREEN + "Email updated successfully!" + RESET);
+                    if (isDuplicateEmail(newEmail)) {
+                        centerText(RED + "Email already exists!" + RESET);
+                    }
+                    else {
+                        user.email = newEmail;
+                        updateUserInJson(user, originalEmail);
+                        centerText(GREEN + "Email updated successfully!" + RESET);
+
+                        // Reload users from JSON to ensure consistency
+                        int userIDCounter = 1;
+                        loadUsersFromJson(users, userIDCounter);
+                    }
+                }
+                else {
+                    centerText(RED + "Invalid email format!" + RESET);
                 }
                 break;
             }
@@ -410,7 +425,7 @@ void Admin::searchAndEditUser(std::vector<User>& users) {
                 getUserInput("Enter new password (min 8 characters):", newPassword);
                 if (!newPassword.empty() && isValidPassword(newPassword)) {
                     user.password = newPassword;
-                    updateUserInJson(user);  // Add this line
+                    updateUserInJson(user, originalEmail);
                     centerText(GREEN + "Password updated successfully!" + RESET);
                 }
                 break;
@@ -423,6 +438,9 @@ void Admin::searchAndEditUser(std::vector<User>& users) {
                     if (!isValidPhoneNumber(phoneStr)) {
                         centerText(RED + "Invalid phone number format. Please enter a valid number." + RESET);
                     }
+                    else if (isDuplicatePhone(phoneStr)) {
+                        centerText(RED + "Phone number already exists!" + RESET);
+                    }
                     else {
                         validPhone = true;
                         std::string cleanNumber;
@@ -432,7 +450,7 @@ void Admin::searchAndEditUser(std::vector<User>& users) {
                             }
                         }
                         user.phoneno = cleanNumber;
-                        updateUserInJson(user);  // Add this line
+                        updateUserInJson(user, originalEmail);
                         centerText(GREEN + "Phone number updated successfully!" + RESET);
                     }
                 } while (!validPhone);
@@ -452,7 +470,7 @@ void Admin::searchAndEditUser(std::vector<User>& users) {
 
 
 // admin to search and edit user update function 
-void updateUserInJson(const User& user) {
+void updateUserInJson(const User& user, const std::string& originalEmail) {
     const std::string filename = "User_Registration.json";
     nlohmann::json userData;
 
@@ -466,11 +484,13 @@ void updateUserInJson(const User& user) {
     // Find and update the user
     bool userFound = false;
     for (auto& jsonUser : userData["users"]) {
-        if (jsonUser["email"] == user.email) {  // Using email as unique identifier
+        if (jsonUser["email"] == originalEmail) {  // Match based on original email
+            // Update all user fields
             jsonUser["fullname"] = user.name;
             jsonUser["email"] = user.email;
             jsonUser["password"] = user.password;
             jsonUser["phoneno"] = user.phoneno;
+            // Don't update username and joinDate as they should remain constant
             userFound = true;
             break;
         }
@@ -482,6 +502,9 @@ void updateUserInJson(const User& user) {
         outFile << userData.dump(2);
         outFile.close();
     }
+    else {
+        std::cerr << "Warning: User not found in JSON file\n";
+    }
 }
 
 void Admin::searchAndDeleteUser(std::vector<User>& users) {
@@ -492,8 +515,8 @@ void Admin::searchAndDeleteUser(std::vector<User>& users) {
     auto it = std::find_if(users.begin(), users.end(),
         [&searchTerm](const User& user) {
             return std::to_string(user.userID) == searchTerm ||
-            user.name == searchTerm ||
-        user.email == searchTerm;
+                user.name == searchTerm ||
+                user.email == searchTerm;
         });
 
     if (it != users.end()) {

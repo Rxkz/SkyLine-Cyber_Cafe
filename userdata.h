@@ -90,7 +90,7 @@ public:
 };
 
 // Function declarations for JSON operations
-void updateUserInJson(const User& user);
+void updateUserInJson(const User& user, const std::string& originalEmail);
 void saveUserToJson(const UserRegistration& user);
 void loadAdminsFromJson(std::vector<Admin>& admins);
 void saveAdminToJson(const std::string& email, const std::string& password);
