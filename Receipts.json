@@ -1,0 +1,31 @@
+{
+  "receipts": [
+    {
+      "isPaid": true,
+      "paymentMethod": "EFTPOS",
+      "receiptDate": 1732097226,
+      "services": [
+        {
+          "cost": 11.0,
+          "duration": 22,
+          "quantity": 0,
+          "rate": 0.5,
+          "timestamp": 1732097086,
+          "type": "Internet Browsing"
+        },
+        {
+          "cost": 30.099999999999998,
+          "duration": 0,
+          "quantity": 43,
+          "rate": 0.7,
+          "timestamp": 1732097092,
+          "type": "Printing"
+        }
+      ],
+      "totalAmount": 41.099999999999994,
+      "userEmail": "visheshgrover02@gmail.com",
+      "userID": 2,
+      "userName": "VISHESH GROVER"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+//main.cpp
 #include "userdata.h"
 #include "display.h"
 #include "logo.h"
@@ -30,20 +31,20 @@ int main() {
             "4. Exit"
         };
 
-        displayCenteredMenu(mainMenuItems, "Main Menu");
+        displayCenteredMenu(mainMenuItems, "\tMain Menu");
 
         // Get user input with validation
         int choice = 0;
         string input;
-        centerText("Choose an option (1-4):");
+        centerText(YELLOW + "\t\t\tChoose an option (1-4):");
         centerText("");  // Empty line for spacing
-        cout << string((80 - 20) / 2, ' ') << "> ";
+        cout << string((80 - 20) / 2, ' ') << "\t\t> ";
         getline(cin, input);
 
         // Validate input
         if (!isInteger(input) || stoi(input) < 1 || stoi(input) > 4) {
             StopLogoAnimation();
-            centerText(RED + "Please enter a valid number." + RESET);
+            centerText(RED + "\t\t\t\tPlease enter a valid number." + RESET);
             this_thread::sleep_for(chrono::milliseconds(1500));
             continue;  // This will restart the loop and show everything again
         }
@@ -61,8 +62,8 @@ int main() {
         case 2: {
             displayLogo(1);
             string email, password;
-            getUserInput(YELLOW + "Enter Email:" + RESET, email);
-            centerText(YELLOW + "Enter Password:" + RESET);
+            getUserInput(YELLOW + "\t\t\t\tEnter Email:" + RESET, email);
+            centerText(YELLOW + "\t\t\t\tEnter Password:" + RESET);
             password = getHiddenPassword();
             bool userFound = false;
             for (auto& user : users) {
@@ -75,7 +76,7 @@ int main() {
                 }
             }
             if (!userFound) {
-                centerText(RED + "Invalid email or password." + RESET);
+                centerText(RED + "\t\t\t\tInvalid email or password." + RESET);
             }
             cout << "\nPress Enter to continue...";
             cin.get();
@@ -84,8 +85,8 @@ int main() {
         case 3: {
             displayLogo(3);
             string email, password;
-            getUserInput("Enter Admin Email:", email);
-            centerText("Enter Password:");
+            getUserInput(YELLOW + "\t\t\tEnter Admin Email:" + RESET, email);
+            centerText(YELLOW + "\t\t\tEnter Password:" + RESET);
             password = getHiddenPassword();
             bool adminFound = false;
             for (auto& admin : admins) {
@@ -97,7 +98,7 @@ int main() {
                 }
             }
             if (!adminFound) {
-                centerText(RED + "Invalid admin credentials." + RESET);
+                centerText(RED + "\t\t\t\tInvalid admin credentials." + RESET);
             }
             cout << "\nPress Enter to continue...";
             cin.get();

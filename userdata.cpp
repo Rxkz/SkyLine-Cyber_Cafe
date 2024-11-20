@@ -21,6 +21,8 @@
 #include <windows.h>
 #endif
 
+
+
 using namespace std;
 
 // ============= Global Dec =============
@@ -99,104 +101,236 @@ void saveUserToJson(const UserRegistration& user) {
 
 }
 
+
 void handleRegistration(std::vector<User>& users, int& userIDCounter) {
     clearConsole();
-    displayLogo(2);
+
     UserRegistration newUser;
     newUser.joinDate = time(0);
 
     // Username with validation
     do {
+        // clearConsole();
+        displayLogo(2);
 
         centerText(YELLOW + "\t\t\tEnter Username:" + RESET);
-        cout << string((80 - 20) / 2, ' ') << "> "; //this is used to cebter thr cursor by making a string of 30 .. 80 is total length for console window and 20 is reserved for cin . 
-        std::getline(std::cin, newUser.username);
+        cout << string((80 - 20) / 2, ' ') << "> ";
+
+        // Get username with character input control
+        string input;
+        char ch;
+        while ((ch = _getch()) != 13) {  // 13 is Enter key
+            if (ch == 8) {  // Backspace
+                if (!input.empty()) {
+                    input.pop_back();
+                    cout << "\b \b";  // Erase character from screen
+                }
+            }
+            else if (ch >= 32 && ch <= 126) {  // Printable characters only
+                input += ch;
+                cout << ch;
+            }
+        }
+        cout << endl;
+
+        newUser.username = input;
+
         if (!isValidUserName(newUser.username)) {
-            centerText(RED + "Invalid username format. It must be at least 6 characters long, start with a letter, and can only include the special characters: @, ., -, and _. Please try again..." + RESET);
-            centerText("");  // Empty line for spacing
+            centerText(RED + "Invalid username format. It must be at least 6 characters long, start with a letter," + RESET);
+            centerText(RED + "and can only include the special characters: @, ., -, and _. Please try again..." + RESET);
+            centerText("");
+            Sleep(1500);
         }
     } while (!isValidUserName(newUser.username));
 
     // Password with validation and hiding
     std::string confirmPassword;
     do {
-        centerText("");  // Empty line for spacing
+        //clearConsole();
+       // displayLogo(2);
         centerText(YELLOW + "\t\t\tEnter Password:" + RESET);
-        newUser.password = getHiddenPassword();
+        cout << string((80 - 20) / 2, ' ') << "> ";
+
+        // Get password securely
+        string password;
+        char ch;
+        while ((ch = _getch()) != 13) {
+            if (ch == 8) {  // Backspace
+                if (!password.empty()) {
+                    password.pop_back();
+                    cout << "\b \b";
+                }
+            }
+            else if (ch >= 32 && ch <= 126) {
+                password += ch;
+                cout << "*";
+            }
+        }
+        cout << endl;
+        newUser.password = password;
 
         if (!isValidDetailedPassword(newUser.password)) {
-            centerText(RED + "Invalid password format. Must be 8+ characters, include uppercase, lowercase, number, and special character. Try again.." + RESET);
-
+            centerText(RED + "Invalid password format. Must be 8+ characters, include uppercase, lowercase," + RESET);
+            centerText(RED + "number, and special character. Try again.." + RESET);
+            Sleep(1500);
             continue;
-
         }
 
         centerText(YELLOW + "\t\t\tConfirm Password:" + RESET);
+        cout << string((80 - 20) / 2, ' ') << "> ";
 
-        confirmPassword = getHiddenPassword();
+        // Get confirmation password
+        string confirm;
+        while ((ch = _getch()) != 13) {
+            if (ch == 8) {
+                if (!confirm.empty()) {
+                    confirm.pop_back();
+                    cout << "\b \b";
+                }
+            }
+            else if (ch >= 32 && ch <= 126) {
+                confirm += ch;
+                cout << "*";
+            }
+        }
+        cout << endl;
+        confirmPassword = confirm;
 
         if (newUser.password != confirmPassword) {
-            centerText(RED + "Passwords do not match. Please ReEnter Password Again.." + RESET);
-            centerText("");  // Empty line for spacing
+            centerText(RED + "Passwords do not match. Please try again." + RESET);
+            Sleep(1500);
         }
     } while (!isValidDetailedPassword(newUser.password) || newUser.password != confirmPassword);
 
     // Full Name
-    centerText("");  // Empty line for spacing
-    centerText(YELLOW + "\t\t\tEnter Full Name:" + RESET);
-    cout << string((80 - 20) / 2, ' ') << "> "; //this is used to cebter thr cursor by making a string of 30 .. 80 is total length for console window and 20 is reserved for cin 
-    std::getline(std::cin, newUser.fullname);
+    do {
+        //  clearConsole();
+        //  displayLogo(2);
+        centerText(YELLOW + "\t\t\tEnter Full Name:" + RESET);
+        cout << string((80 - 20) / 2, ' ') << "> ";
+
+        string input;
+        char ch;
+        while ((ch = _getch()) != 13) {
+            if (ch == 8) {
+                if (!input.empty()) {
+                    input.pop_back();
+                    cout << "\b \b";
+                }
+            }
+            else if ((ch >= 32 && ch <= 126) && input.length() < 50) {  // Limit name length
+                input += ch;
+                cout << ch;
+            }
+        }
+        cout << endl;
+        newUser.fullname = input;
+
+        if (newUser.fullname.empty()) {
+            centerText(RED + "Name cannot be empty. Please try again." + RESET);
+            Sleep(1500);
+        }
+    } while (newUser.fullname.empty());
 
     // Email with validation and duplicate check
     std::string confirmEmail;
     bool validEmail = false;
     do {
-        centerText("");  // Empty line for spacing
+        //clearConsole();
+       // displayLogo(2);
         centerText(YELLOW + "\t\t\tEnter Email:" + RESET);
-        cout << string((80 - 20) / 2, ' ') << "> "; //this is used to cebter thr cursor by making a string of 30 .. 80 is total length for console window and 20 is reserved for cin.
-        std::getline(std::cin, newUser.email);
+        cout << string((80 - 20) / 2, ' ') << "> ";
+
+        string input;
+        char ch;
+        while ((ch = _getch()) != 13) {
+            if (ch == 8) {
+                if (!input.empty()) {
+                    input.pop_back();
+                    cout << "\b \b";
+                }
+            }
+            else if (ch >= 32 && ch <= 126) {
+                input += ch;
+                cout << ch;
+            }
+        }
+        cout << endl;
+        newUser.email = input;
 
         if (!isValidDetailedEmail(newUser.email)) {
             centerText(RED + "Invalid email format. Please try again." + RESET);
-            centerText("");  // Empty line for spacing
+            Sleep(1500);
             continue;
         }
 
         if (isDuplicateEmail(newUser.email)) {
             centerText(RED + "Email already registered. Please login or use a different email." + RESET);
-            centerText("");  // Empty line for spacing
+            Sleep(1500);
             continue;
         }
 
         centerText(YELLOW + "\t\t\tConfirm Email:" + RESET);
+        cout << string((80 - 20) / 2, ' ') << "> ";
 
-        cout << string((80 - 20) / 2, ' ') << "> "; //this is used to cebter thr cursor by making a string of 30 .. 80 is total length for console window and 20 is reserved for cin 
-        std::getline(std::cin, confirmEmail);
+        input.clear();
+        while ((ch = _getch()) != 13) {
+            if (ch == 8) {
+                if (!input.empty()) {
+                    input.pop_back();
+                    cout << "\b \b";
+                }
+            }
+            else if (ch >= 32 && ch <= 126) {
+                input += ch;
+                cout << ch;
+            }
+        }
+        cout << endl;
+        confirmEmail = input;
 
         if (newUser.email != confirmEmail) {
             centerText(RED + "Emails do not match. Please try again." + RESET);
-            centerText("");  // Empty line for spacing
+            Sleep(1500);
             continue;
         }
         validEmail = true;
     } while (!validEmail);
 
     // Phone number validation with duplicate check
-    std::string phoneStr;
     bool validPhone = false;
     do {
-        centerText("");  // Empty line for spacing
+        // clearConsole();
+        // displayLogo(2);
         centerText(YELLOW + "\t\t\tEnter Phone Number:" + RESET);
-        cout << string((80 - 20) / 2, ' ') << "> "; //this is used to cebter thr cursor by making a string of 30 .. 80 is total length for console window and 20 is reserved for cin 
-        std::getline(std::cin, phoneStr);
+        cout << string((80 - 20) / 2, ' ') << "> ";
+
+        string input;
+        char ch;
+        while ((ch = _getch()) != 13) {
+            if (ch == 8) {
+                if (!input.empty()) {
+                    input.pop_back();
+                    cout << "\b \b";
+                }
+            }
+            else if ((ch >= 32 && ch <= 126) && input.length() < 15) {  // Limit phone length
+                input += ch;
+                cout << ch;
+            }
+        }
+        cout << endl;
+
+        std::string phoneStr = input;
 
         if (!isValidPhoneNumber(phoneStr)) {
-            centerText(RED + "Invalid phone number format. Must be 10-13 digits and may include spaces, +, -, (, ). Please enter a valid number" + RESET);
-            centerText("");  // Empty line for spacing
+            centerText(RED + "Invalid phone number format. Must be 10-13 digits and may include spaces, +, -, (, )." + RESET);
+            centerText(RED + "Please enter a valid number" + RESET);
+            Sleep(1500);
             continue;
         }
 
-        // Clean the phone number before checking for duplicates
+        // Clean the phone number
         std::string cleanNumber;
         for (char c : phoneStr) {
             if (isdigit(c)) {
@@ -206,15 +340,22 @@ void handleRegistration(std::vector<User>& users, int& userIDCounter) {
 
         if (isDuplicatePhone(cleanNumber)) {
             centerText(RED + "Phone number already registered. Please use a different number." + RESET);
-            centerText("");  // Empty line for spacing
+            Sleep(1500);
             continue;
         }
         validPhone = true;
         newUser.phoneno = cleanNumber;
     } while (!validPhone);
 
+    // Save user data
     saveUserToJson(newUser);
     users.emplace_back(newUser.fullname, newUser.email, newUser.password, userIDCounter++);
+
+    // clearConsole();
+   //  displayLogo(2);
+    // centerText(GREEN + "Registration successful!" + RESET);
+    centerText(YELLOW + "Welcome to Skyline Cyber Cafe, " + newUser.fullname + "!" + RESET);
+    Sleep(2000);
 }
 
 
@@ -427,12 +568,12 @@ void handleAdminMenu(Admin& admin, std::vector<User>& users, std::vector<Admin>&
 
     do {
         ShowLogoAnimation();
-        displayCenteredMenu(menuItems, "Admin Menu");
+        displayCenteredMenu(menuItems, "\tAdmin Menu");
 
         std::string inputStr;
-        centerText("Enter choice (1-9):");
+        centerText(YELLOW + "\t\t\tEnter choice (1-9):");
         centerText("");
-        std::cout << std::string((80 - 20) / 2, ' ') << "> ";
+        std::cout << std::string((80 - 20) / 2, ' ') << "\t\t> ";
         std::getline(std::cin, inputStr);
 
         // Clear screen for error message if needed
@@ -440,7 +581,7 @@ void handleAdminMenu(Admin& admin, std::vector<User>& users, std::vector<Admin>&
         StopLogoAnimation();
 
         if (!isInteger(inputStr) || std::stoi(inputStr) < 1 || std::stoi(inputStr) > 9) {
-            centerText(RED + "Invalid choice. Please enter a number between 1 and 9." + RESET);
+            centerText(RED + "\t\tInvalid choice. Please enter a number between 1 and 9." + RESET);
             std::this_thread::sleep_for(std::chrono::milliseconds(1500));
             continue;
         }
@@ -508,6 +649,7 @@ void Admin::viewOnlineUsers(const std::vector<User>& users) {
 // admin to search and edit a user
 void Admin::searchAndEditUser(std::vector<User>& users) {
     clearConsole();
+
     std::string searchTerm;
     const size_t MAX_INPUT_LENGTH = 100;
 
@@ -857,7 +999,7 @@ void Admin::viewTotalStats(const std::vector<User>& users) {
     }
 
     // Display Statistics
-    centerText(CYAN + "\t\t\t===== SKYLINE CYBER CAFE SYSTEM STATISTICS =====" + RESET);
+    centerText(CYAN + "\t\t===== SKYLINE CYBER CAFE SYSTEM STATISTICS =====" + RESET);
     centerText(YELLOW + "----------------------------------------");
 
     // General Statistics
@@ -869,7 +1011,8 @@ void Admin::viewTotalStats(const std::vector<User>& users) {
     centerText(YELLOW + "----------------------------------------");
 
     // Service-specific Statistics
-    centerText(YELLOW + "Service-wise Statistics:" + RESET);
+    cout << "\n";
+    centerText(CYAN + "  Service-wise Statistics:" + RESET);
 
     // Internet Browsing Stats
     if (serviceStats.count("Internet Browsing")) {
@@ -951,14 +1094,14 @@ void handlePayment(User& user, std::vector<ServiceUsage>& currentServices) {  //
             "5. Cancel Payment"
         };
 
-        displayCenteredMenu(paymentMenuItems, "Payment Methods");
+        displayCenteredMenu(paymentMenuItems, "\tPayment Methods");
 
 
         // Get and validate user input
         std::string input;
-        centerText("Choose payment method (1-5):");
+        centerText(YELLOW + "\t\t\tChoose payment method (1-5):");
         centerText("");  // Empty line for spacing
-        std::cout << std::string((80 - 20) / 2, ' ') << "> ";
+        std::cout << std::string((80 - 20) / 2, ' ') << "\t\t> ";
         std::getline(std::cin, input);
 
         StopLogoAnimation();
@@ -993,6 +1136,7 @@ void handlePayment(User& user, std::vector<ServiceUsage>& currentServices) {  //
                 }
                 case 2: { // Card Payment
                     if (handleCardPayment()) {
+                        std::this_thread::sleep_for(std::chrono::seconds(5));
                         centerText(GREEN + "Payment successful!" + RESET);
                         receipt.paymentMethod = "Card";
                         receipt.isPaid = true;
@@ -1131,7 +1275,7 @@ bool handleCardPayment() {
     } while (!validInput);
 
     centerText("Processing payment...");
-    std::this_thread::sleep_for(std::chrono::seconds(3));
+    std::this_thread::sleep_for(std::chrono::seconds(5));
     return true;
 }
 
@@ -1184,14 +1328,14 @@ void handleUserMenu(User& user) {
 
         // Display the menu
 
-        displayCenteredMenu(menuItems, "User Menu");
+        displayCenteredMenu(menuItems, "\tUser Menu");
 
         // Get and validate user input
         std::string input;
         const int maxOption = (hasUsedService || user.totalBill > 0) ? 6 : 5;
-        centerText("Choose an option (1-" + std::to_string(maxOption) + "):");
+        centerText(YELLOW + "\t\t\tChoose an option (1-" + std::to_string(maxOption) + "):");
         centerText("");  // Empty line for spacing
-        std::cout << std::string((80 - 20) / 2, ' ') << "> ";
+        std::cout << std::string((80 - 20) / 2, ' ') << "\t\t> ";
         std::getline(std::cin, input);
 
         StopLogoAnimation();
@@ -1462,10 +1606,10 @@ void displayReceipt(const Receipt& receipt) {
 void displayInvoice(const std::vector<ServiceUsage>& services, double totalAmount, const User& user) {
     clearConsole();
     centerText(YELLOW + "=== SKYLINE CYBER CAFE INVOICE ===" + RESET);
-    //centerText("Date: " + std::string(ctime(&time(0))));
+
     centerText("Customer: " + user.name);
-    centerText("ID: " + std::to_string(user.userID));
-    centerText("Email: " + user.email);
+    centerText(GREEN + "ID: " + std::to_string(user.userID) + RESET);
+    centerText(YELLOW + "Email: " + user.email + RESET);
     centerText("----------------------------------------");
 
     centerText("Services Used:");
@@ -1488,8 +1632,8 @@ void displayInvoice(const std::vector<ServiceUsage>& services, double totalAmoun
 
     centerText("----------------------------------------");
     centerText("Subtotal: $" + std::to_string(subtotal));
-    centerText("Total Amount Due: $" + std::to_string(totalAmount));
-    centerText("========================================");
+    centerText(RED + "Total Amount Due: $" + std::to_string(totalAmount) + RESET);
+    centerText(YELLOW + "=====================================" + RESET);
 }
 
 
