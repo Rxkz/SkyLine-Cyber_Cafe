@@ -5,12 +5,16 @@
 #include <vector>
 #include <iomanip>
 #include <limits>
+#include <string>
+#include <map>
+#include <ctime>
+#include <thread>
+#include <chrono>
 
 int main() {
     std::vector<User> users;
-    std::vector<Admin> admins = { Admin("admin@example.com", "admin123") };
+    std::vector<Admin> admins = { Admin("123", "456") };
     int userIDCounter = 1;
-
     loadUsersFromJson(users, userIDCounter);
     loadAdminsFromJson(admins);
 
@@ -23,7 +27,6 @@ int main() {
         };
 
         displayCenteredMenu(mainMenuItems, "Main Menu");
-
         int choice;
         getUserInput("Choose an option:", choice);
 
@@ -38,6 +41,7 @@ int main() {
             centerText("Enter Password:");
             password = getHiddenPassword();
             bool userFound = false;
+
             for (auto& user : users) {
                 if (user.email == email && user.password == password) {
                     userFound = true;
@@ -47,6 +51,7 @@ int main() {
                     break;
                 }
             }
+
             if (!userFound) {
                 centerText(RED + "Invalid email or password." + RESET);
             }
@@ -59,6 +64,7 @@ int main() {
             centerText("Enter Password:");
             password = getHiddenPassword();
             bool adminFound = false;
+
             for (auto& admin : admins) {
                 if (admin.email == email && admin.password == password) {
                     adminFound = true;
@@ -67,6 +73,7 @@ int main() {
                     break;
                 }
             }
+
             if (!adminFound) {
                 centerText(RED + "Invalid admin credentials." + RESET);
             }
@@ -86,6 +93,5 @@ int main() {
             std::cin.get();
         }
     }
-
     return 0;
 }

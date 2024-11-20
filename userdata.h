@@ -8,6 +8,17 @@
 #include <regex>
 #include "nlohmann/json.hpp"
 
+// Forward declarations
+class User;
+class Admin;
+struct Receipt;
+struct ServiceUsage;
+struct Session;
+struct UserRegistration;
+
+// Function declaration for receipt loading
+std::vector<Receipt> loadReceiptsFromJson();
+
 // Color definitions
 const std::string RED = "\033[31m";
 const std::string GREEN = "\033[32m";
@@ -16,13 +27,6 @@ const std::string BLUE = "\033[34m";
 const std::string MAGENTA = "\033[35m";
 const std::string CYAN = "\033[36m";
 const std::string RESET = "\033[0m";
-
-// Forward declarations
-void clearConsole();
-void centerText(const std::string& text);
-void displayLogo();
-bool isValidEmail(const std::string& email);
-bool isValidPassword(const std::string& password);
 
 // Session structure
 struct Session {
@@ -44,15 +48,27 @@ struct UserRegistration {
     time_t joinDate;
 };
 
-//Email And Password and Phoneoe Santosh MTHD
-std::string getHiddenPassword();
-bool isValidUserName(const std::string& username);
-bool isValidDetailedPassword(const std::string& password);
-bool isValidDetailedEmail(const std::string& email);
-bool isValidPhoneNumber(const std::string& phone);
-bool isDuplicateEmail(const std::string& email);
-bool isDuplicatePhone(const std::string& phone);
+// Service Usage structure
+struct ServiceUsage {
+    std::string serviceType;
+    int duration;          // For time-based services
+    int quantity;         // For page-based services
+    double rate;
+    double cost;
+    time_t timestamp;
+};
 
+// Receipt structure
+struct Receipt {
+    int userID;
+    std::string userName;
+    std::string userEmail;
+    std::vector<ServiceUsage> services;
+    double totalAmount;
+    time_t receiptDate;
+    std::string paymentMethod;
+    bool isPaid;
+};
 
 // User class
 class User {
@@ -61,11 +77,12 @@ public:
     std::string email;
     std::string password;
     int userID;
-    std::string phoneno;  // Changed from int to string
+    std::string phoneno;
     double totalBill;
     bool isLoggedIn;
     time_t joinDate;
     std::vector<Session> sessions;
+
     User(std::string n, std::string e, std::string p, int id);
     void startSession();
     void endSession(double sessionBill);
@@ -86,10 +103,31 @@ public:
     void searchAndEditUser(std::vector<User>& users);
     void searchAndDeleteUser(std::vector<User>& users);
     void viewTotalStats(const std::vector<User>& users);
-
 };
 
-// Function declarations for JSON operations
+// Core function declarations
+void clearConsole();
+void centerText(const std::string& text);
+void displayLogo();
+std::string getHiddenPassword();
+
+// Validation functions
+bool isValidUserName(const std::string& username);
+bool isValidEmail(const std::string& email);
+bool isValidPassword(const std::string& password);
+bool isValidDetailedPassword(const std::string& password);
+bool isValidDetailedEmail(const std::string& email);
+bool isValidPhoneNumber(const std::string& phone);
+bool isDuplicateEmail(const std::string& email);
+bool isDuplicatePhone(const std::string& phone);
+
+// Receipt and invoice functions
+void saveReceiptToJson(const Receipt& receipt);
+void displayReceipt(const Receipt& receipt);
+void displayInvoice(const std::vector<ServiceUsage>& services, double totalAmount, const User& user);
+void handleReceiptEmail(const Receipt& receipt);
+
+// JSON operations
 void updateUserInJson(const User& user, const std::string& originalEmail);
 void saveUserToJson(const UserRegistration& user);
 void loadAdminsFromJson(std::vector<Admin>& admins);
@@ -101,11 +139,17 @@ void handleUserMenu(User& user);
 void handleAdminMenu(Admin& admin, std::vector<User>& users, std::vector<Admin>& admins);
 void handleNewAdminRegistration(std::vector<Admin>& admins);
 void handleRegistration(std::vector<User>& users, int& userIDCounter);
+void handlePayment(User& user);
+bool handleCardPayment();
 
 // UI helper functions
 void displayCenteredMenu(const std::vector<std::string>& menuItems, const std::string& title);
 void getUserInput(const std::string& prompt, std::string& input);
 void getUserInput(const std::string& prompt, int& input);
 std::string padString(const std::string& str, int width);
+
+// Additional time-related functions
+std::string formatDateTime(const time_t& time);
+std::string getCurrentDateTime();
 
 #endif // USERDATA_H
