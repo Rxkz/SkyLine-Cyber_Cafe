@@ -2,6 +2,8 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "userdata.h"
+#include "display.h"
+#include "validation.h"
 #include <iostream>
 #include <fstream>
 #include <conio.h>// hide passwords 
@@ -21,107 +23,7 @@
 
 int userIDCounter = 1;
 
-// ============= Display  =============
-void centerText(const std::string& text) {
-    const int CONSOLE_WIDTH = 80; // Default console width
-    int padding = (CONSOLE_WIDTH - text.length()) / 2;
-    if (padding > 0) {
-        std::cout << std::string(padding, ' ');
-    }
-    std::cout << text << std::endl;
-}
 
-void displayCenteredMenu(const std::vector<std::string>& menuItems, const std::string& title) {
-    clearConsole();
-    displayLogo();
-
-    if (!title.empty()) {
-        std::cout << "\n";
-        centerText(YELLOW + title + RESET);
-        std::cout << "\n";
-    }
-
-    // Calculate dimensions
-    const int ITEMS_PER_ROW = 2;  // Number of items per row
-    const int ITEM_WIDTH = 35;     // Width of each menu box
-    const int TOTAL_WIDTH = ITEM_WIDTH * ITEMS_PER_ROW + 10;  // Total width including borders and spacing
-
-    // Create top border
-    std::string topBorder = "+" + std::string(TOTAL_WIDTH - 2, '-') + "+";
-    centerText(topBorder);
-
-    // Display items in grid
-    for (size_t i = 0; i < menuItems.size(); i += ITEMS_PER_ROW) {
-        std::string line = "| ";
-
-        // Add items in current row
-        for (size_t j = 0; j < ITEMS_PER_ROW && (i + j) < menuItems.size(); j++) {
-            // Create a padded item string
-            std::string item = menuItems[i + j];
-            std::string paddedItem = item + std::string(ITEM_WIDTH - 2 - item.length(), ' ');
-            line += paddedItem;
-            if (j < ITEMS_PER_ROW - 1 && (i + j + 1) < menuItems.size()) {
-                line += "| ";
-            }
-        }
-
-        // Pad the rest of the line if we don't have enough items
-        if ((i + ITEMS_PER_ROW) > menuItems.size()) {
-            line += std::string(ITEM_WIDTH * (ITEMS_PER_ROW - (menuItems.size() - i)) - 2, ' ');
-        }
-        line += " |";
-
-        centerText(line);
-
-        // Add separator line between rows if not the last row
-        if (i + ITEMS_PER_ROW < menuItems.size()) {
-            std::string separator = "|" + std::string(TOTAL_WIDTH - 2, '-') + "|";
-            centerText(separator);
-        }
-    }
-
-    // Create bottom border
-    std::string bottomBorder = "+" + std::string(TOTAL_WIDTH - 2, '-') + "+";
-    centerText(bottomBorder);
-    std::cout << "\n";
-}
-
-// Helper function to pad strings for grid display
-std::string padString(const std::string& str, int width) {
-    if (str.length() >= width) return str;
-    return str + std::string(width - str.length(), ' ');
-}
-
-void displayLogo() {
-    clearConsole();
-    std::vector<std::string> logoLines = {
-        MAGENTA + " _____  _  __ __  _    " + YELLOW + "▲" + MAGENTA + "  _   _  ______ " + RESET,
-        MAGENTA + "/  ___|| |/ / \\ \\| |   " + YELLOW + "/!\\" + MAGENTA + " | \\ | ||  ___|" + RESET,
-        MAGENTA + "\\ `--  |   /   \\ \\ |  " + YELLOW + "/|!|\\" + MAGENTA + "|  \\| || |    " + RESET,
-        MAGENTA + " `--. \\|  /     \\ \\| " + YELLOW + "//|!|\\\\" + MAGENTA + "| . ` || |___ " + RESET,
-        MAGENTA + "/\\__/ /| . \\    _) ) " + YELLOW + " |!| " + MAGENTA + "| |\\  ||  ___| " + RESET,
-        MAGENTA + "\\____/ |_|\\_\\  |___/ " + YELLOW + " |!| " + MAGENTA + "|_| \\_||_____|" + RESET,
-        YELLOW + "                  =====   " + RESET,
-        "",
-        GREEN + "Cyber Cafe" + RESET
-    };
-
-    std::cout << "\n\n";
-    for (const auto& line : logoLines) {
-        centerText(line);
-    }
-    std::cout << "\n";
-    centerText(GREEN + "Welcome to Skyline Cyber Cafe!" + RESET);
-    std::cout << "\n";
-}
-
-void clearConsole() {
-#ifdef _WIN32
-    system("cls");
-#else
-    system("clear");
-#endif
-}
 
 
 // ============= User Sessions  =============
@@ -158,215 +60,9 @@ int User::getTotalTime() const {
     return totalMinutes;
 }
 
-// ============= Validation  =============
 
-//function to check a validusername Santosh MTD
-bool isValidUserName(const std::string& username) {
-    if (username.length() < 6 || username.length() > 20) {
-        return false;
-    }
-    if (!isalpha(username[0])) {
-        return false;
-    }
-    for (char ch : username) {
-        if (!(isalnum(ch) || ch == '@' || ch == '.' || ch == '-' || ch == '_')) {
-            return false;
-        }
-    }
-    return true;
-}
-
-// this was old email verification so istaed of change all the function name in all other pages we just replaced this fuctions implemention to call our accual email validation 
-bool isValidEmail(const std::string& email) {
-
-    return isValidDetailedEmail(email);
-
-}
-
-//For Email Validation Santosh MTD
-bool isValidDetailedEmail(const std::string& email) {
-    // List of valid domains
-    std::vector<std::string> validDomains = {
-        "gmail.com", "outlook.com", "example.com", "test.com", "hotmail.com",
-        "live.com", "yahoo.com", "icloud.com", "me.com", "mac.com",
-        "protonmail.com", "protonmail.ch", "zoho.com", "aol.com", "gmx.com",
-        "gmx.de", "gmx.net", "mail.com", "usa.com", "email.com", "consultant.com",
-        "musician.org", "photographer.com", "yandex.com", "yandex.ru",
-        "fastmail.com", "fastmail.fm", "tutanota.com", "tutanota.de",
-        "posteo.de", "runbox.com", "kolabnow.com", "hushmail.com",
-        "mail.ru", "list.ru"
-    };
-
-    // List of special characters that cannot start or end the email
-    std::vector<char> specialChars = {
-        '.', '-', '_', '+', '%', '&', '\'', '"', '!', '#', '$', '^', '*',
-        '(', ')', ',', ':', ';', '=', '~', '`', '/', '?', '<', '>',
-        '[', ']', '{', '}'
-    };
-
-    // Basic structure checks
-    size_t atPos = email.find('@');
-    size_t dotPos = email.find('.');
-
-    // Invalid conditions:
-    // 1. No @ symbol
-    // 2. No dot
-    // 3. Contains spaces
-    // 4. Multiple @ symbols
-    // 5. Starts or ends with @ or .
-    // 6. Email too long (max 254 characters)
-    if (atPos == std::string::npos ||
-        dotPos == std::string::npos ||
-        email.find(' ') != std::string::npos ||
-        email.find('@', atPos + 1) != std::string::npos ||
-        email.front() == '@' || email.front() == '.' ||
-        email.back() == '@' || email.back() == '.' ||
-        email.length() > 254) {
-        return false;
-    }
-
-    // Check for special characters at start or end
-    for (char c : specialChars) {
-        if (email.front() == c || email.back() == c) {
-            return false;
-        }
-    }
-
-    // Extract domain and check against valid domains
-    std::string domain = email.substr(atPos + 1);
-    return std::find(validDomains.begin(), validDomains.end(), domain) != validDomains.end();
-}
-
-bool isDuplicateEmail(const std::string& email) {
-    const std::string filename = "User_Registration.json";
-    std::ifstream file(filename);
-
-    if (!file.good()) {
-        return false;  // File doesn't exist, so no duplicates
-    }
-
-    try {
-        nlohmann::json userData = nlohmann::json::parse(file);
-
-        for (const auto& user : userData["users"]) {
-            if (user["email"] == email) {
-                return true;  // Found duplicate email
-            }
-        }
-    }
-    catch (const std::exception& e) {
-        centerText(RED + "Error checking email: " + e.what() + RESET);
-        return false;
-    }
-
-    file.close();
-    return false;
-}
-
-// this was old Password verification so istaed of change all the function name in all other pages we just replaced this fuctions implemention to call our accual email validation
-bool isValidPassword(const std::string& password) {
-    return isValidDetailedPassword(password);
-}
-//FOR PASSWORD Validtion Santosh MTD
-bool isValidDetailedPassword(const std::string& password) {
-    if (password.length() < 8 || password.length() > 20) {
-        return false;
-    }
-    bool hasUpper = false, hasLower = false, hasDigit = false, hasSpecial = false;
-
-    for (char c : password) {
-        if (c >= 'A' && c <= 'Z') hasUpper = true;
-        else if (c >= 'a' && c <= 'z') hasLower = true;
-        else if (c >= '0' && c <= '9') hasDigit = true;
-        else if (!(c == ' ' || (c >= '0' && c <= '9') ||
-            (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))) {
-            hasSpecial = true;
-        }
-    }
-    return hasUpper && hasLower && hasDigit && hasSpecial;
-}
-
-//For Hiding Passwords Santosh MTD
-std::string getHiddenPassword() {
-    std::string password;
-    char ch;
-    while (true) {
-        ch = _getch();
-        if (ch == 13) { // Enter key
-            std::cout << std::endl;
-            break;
-        }
-        else if (ch == 8 && !password.empty()) { // Backspace
-            password.pop_back();
-            std::cout << "\b \b";
-        }
-        else if (ch != 8) {
-            password += ch;
-            std::cout << '*';
-        }
-    }
-    return password;
-}
-
-//phoneneo validtion Santosh MTD
-bool isValidPhoneNumber(const std::string& phone) {
-    std::string cleanNumber;
-    for (char c : phone) {
-        if (isdigit(c)) {
-            cleanNumber += c;
-        }
-    }
-
-    // Check for invalid characters
-    for (char c : phone) {
-        if (!isdigit(c) && c != ' ' && c != '-' && c != '+' && c != '(' && c != ')') {
-            return false;
-        }
-    }
-
-    // Check length of actual digits
-    if (cleanNumber.length() < 10 || cleanNumber.length() > 13) {
-        return false;
-    }
-
-    // Verify all cleaned characters are digits
-    for (char c : cleanNumber) {
-        if (!isdigit(c)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-//duplpicate number
-bool isDuplicatePhone(const std::string& phone) {
-    const std::string filename = "User_Registration.json";
-    std::ifstream file(filename);
-
-    if (!file.good()) {
-        return false;  // File doesn't exist, so no duplicates
-    }
-
-    try {
-        nlohmann::json userData = nlohmann::json::parse(file);
-
-        for (const auto& user : userData["users"]) {
-            if (user["phoneno"] == phone) {
-                return true;  // Found duplicate phone
-            }
-        }
-    }
-    catch (const std::exception& e) {
-        centerText(RED + "Error checking phone: " + e.what() + RESET);
-        return false;
-    }
-
-    file.close();
-    return false;
-}
-
-
-// ============= JSON  =============
+//
+//// ============= JSON  =============
 
 void saveUserToJson(const UserRegistration& user) {
     nlohmann::json userData;
@@ -675,7 +371,7 @@ void handleNewAdminRegistration(std::vector<Admin>& admins) {
 }
 
 
-// ============= Admin  =============
+//// ============= Admin  =============
 
 
 Admin::Admin(std::string e, std::string p) : email(e), password(p) {}
@@ -919,8 +615,8 @@ void Admin::searchAndDeleteUser(std::vector<User>& users) {
     auto it = std::find_if(users.begin(), users.end(),
         [&searchTerm](const User& user) {
             return std::to_string(user.userID) == searchTerm ||
-            user.name == searchTerm ||
-        user.email == searchTerm;
+                user.name == searchTerm ||
+                user.email == searchTerm;
         });
 
     if (it != users.end()) {
@@ -1331,20 +1027,6 @@ User::User(std::string n, std::string e, std::string p, int id)
     : name(n), email(e), password(p), userID(id), phoneno(""), totalBill(0.0),
     isLoggedIn(false), joinDate(time(0)) {}
 
-void getUserInput(const std::string& prompt, int& input) {
-    centerText(prompt);
-    centerText(""); // Empty line for spacing
-    std::cout << std::string((80 - 20) / 2, ' ') << "> ";
-    std::cin >> input;
-    std::cin.ignore();
-}
-
-void getUserInput(const std::string& prompt, std::string& input) {
-    centerText(prompt);
-    centerText(""); // Empty line for spacing
-    std::cout << std::string((80 - 20) / 2, ' ') << "> ";
-    std::getline(std::cin, input);
-}
 
 void handleUserMenu(User& user) {
     bool logoutPermitted = false;

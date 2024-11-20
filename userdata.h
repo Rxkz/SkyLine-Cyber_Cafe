@@ -1,11 +1,12 @@
 #ifndef USERDATA_H
 #define USERDATA_H
 
+#include "display.h"
+#include "validation.h"
 #include <string>
 #include <vector>
 #include <iostream>
 #include <ctime>
-#include <regex>
 #include "nlohmann/json.hpp"
 
 // Forward declarations
@@ -16,17 +17,9 @@ struct ServiceUsage;
 struct Session;
 struct UserRegistration;
 
+
 // Function declaration for receipt loading
 std::vector<Receipt> loadReceiptsFromJson();
-
-// Color definitions
-const std::string RED = "\033[31m";
-const std::string GREEN = "\033[32m";
-const std::string YELLOW = "\033[33m";
-const std::string BLUE = "\033[34m";
-const std::string MAGENTA = "\033[35m";
-const std::string CYAN = "\033[36m";
-const std::string RESET = "\033[0m";
 
 // Session structure
 struct Session {
@@ -105,22 +98,6 @@ public:
     void viewTotalStats(const std::vector<User>& users);
 };
 
-// Core function declarations
-void clearConsole();
-void centerText(const std::string& text);
-void displayLogo();
-std::string getHiddenPassword();
-
-// Validation functions
-bool isValidUserName(const std::string& username);
-bool isValidEmail(const std::string& email);
-bool isValidPassword(const std::string& password);
-bool isValidDetailedPassword(const std::string& password);
-bool isValidDetailedEmail(const std::string& email);
-bool isValidPhoneNumber(const std::string& phone);
-bool isDuplicateEmail(const std::string& email);
-bool isDuplicatePhone(const std::string& phone);
-
 // Receipt and invoice functions
 void saveReceiptToJson(const Receipt& receipt);
 void displayReceipt(const Receipt& receipt);
@@ -141,15 +118,5 @@ void handleNewAdminRegistration(std::vector<Admin>& admins);
 void handleRegistration(std::vector<User>& users, int& userIDCounter);
 void handlePayment(User& user);
 bool handleCardPayment();
-
-// UI helper functions
-void displayCenteredMenu(const std::vector<std::string>& menuItems, const std::string& title);
-void getUserInput(const std::string& prompt, std::string& input);
-void getUserInput(const std::string& prompt, int& input);
-std::string padString(const std::string& str, int width);
-
-// Additional time-related functions
-std::string formatDateTime(const time_t& time);
-std::string getCurrentDateTime();
 
 #endif // USERDATA_H

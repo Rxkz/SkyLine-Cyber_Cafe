@@ -1,6 +1,8 @@
 //main.cpp
-#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS  // Fix typo in the define
 #include "userdata.h"
+#include "display.h"
+#include "validation.h"
 #include <iostream>
 #include <vector>
 #include <iomanip>
@@ -24,6 +26,7 @@ int main() {
             "2. Login as User",
             "3. Login as Admin",
             "4. Exit"
+
         };
 
         displayCenteredMenu(mainMenuItems, "Main Menu");
