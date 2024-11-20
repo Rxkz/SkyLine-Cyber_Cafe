@@ -16,12 +16,15 @@ const std::string RESET = "\033[0m";
 // Display functions
 void clearConsole();
 void centerText(const std::string& text);
-void displayLogo();
+void displayLogo(int artdis);
 void displayCenteredMenu(const std::vector<std::string>& menuItems, const std::string& title);
+
 
 // Input functions
 void getUserInput(const std::string& prompt, std::string& input);
 void getUserInput(const std::string& prompt, int& input);
+void getIntegerInput(const std::string& prompt, int& input, int min = INT_MIN, int max = INT_MAX);
+bool isInteger(const std::string& str);
 std::string getHiddenPassword();
 
 

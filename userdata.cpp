@@ -4,6 +4,7 @@
 #include "userdata.h"
 #include "display.h"
 #include "validation.h"
+#include"logo.h"
 #include <iostream>
 #include <fstream>
 #include <conio.h>// hide passwords 
@@ -12,12 +13,15 @@
 #include <algorithm>
 #include <ctime>
 #include <map>
+#include <string>
 #include <thread>
 #include <conio.h>// For std::this_thread::sleep_for
 
 #ifdef _WIN32
 #include <windows.h>
 #endif
+
+using namespace std;
 
 // ============= Global Dec =============
 
@@ -60,10 +64,6 @@ int User::getTotalTime() const {
     return totalMinutes;
 }
 
-
-//
-//// ============= JSON  =============
-
 void saveUserToJson(const UserRegistration& user) {
     nlohmann::json userData;
     const std::string filename = "User_Registration.json";
@@ -82,7 +82,7 @@ void saveUserToJson(const UserRegistration& user) {
     newUser["password"] = user.password;
     newUser["fullname"] = user.fullname;
     newUser["email"] = user.email;
-    newUser["phoneno"] = user.phoneno;  // Now storing as string
+    newUser["phoneno"] = user.phoneno;
     newUser["joinDate"] = user.joinDate;
 
     userData["users"].push_back(newUser);
@@ -91,61 +91,91 @@ void saveUserToJson(const UserRegistration& user) {
     outFile << userData.dump(2);
     outFile.close();
 
-    centerText(GREEN + "Registration successful! Data saved to " + filename + RESET);
+
+
+
+    centerText(GREEN + "Registration successful!  ");
+    std::cout << "\n";
+
 }
 
 void handleRegistration(std::vector<User>& users, int& userIDCounter) {
     clearConsole();
+    displayLogo(2);
     UserRegistration newUser;
     newUser.joinDate = time(0);
 
     // Username with validation
     do {
-        getUserInput("Enter Username (min 6 chars, start with letter, special chars: @.-_ only):", newUser.username);
+
+        centerText(YELLOW + "\t\t\tEnter Username:" + RESET);
+        cout << string((80 - 20) / 2, ' ') << "> "; //this is used to cebter thr cursor by making a string of 30 .. 80 is total length for console window and 20 is reserved for cin . 
+        std::getline(std::cin, newUser.username);
         if (!isValidUserName(newUser.username)) {
-            centerText(RED + "Invalid username format. Please try again." + RESET);
+            centerText(RED + "Invalid username format. It must be at least 6 characters long, start with a letter, and can only include the special characters: @, ., -, and _. Please try again..." + RESET);
+            centerText("");  // Empty line for spacing
         }
     } while (!isValidUserName(newUser.username));
 
     // Password with validation and hiding
     std::string confirmPassword;
     do {
-        centerText("Enter Password (min 8 chars, must include uppercase, lowercase, number, special char):");
+        centerText("");  // Empty line for spacing
+        centerText(YELLOW + "\t\t\tEnter Password:" + RESET);
         newUser.password = getHiddenPassword();
 
         if (!isValidDetailedPassword(newUser.password)) {
-            centerText(RED + "Invalid password format. Please try again." + RESET);
+            centerText(RED + "Invalid password format. Must be 8+ characters, include uppercase, lowercase, number, and special character. Try again.." + RESET);
+
             continue;
+
         }
 
-        centerText("Confirm Password:");
+        centerText(YELLOW + "\t\t\tConfirm Password:" + RESET);
+
         confirmPassword = getHiddenPassword();
 
         if (newUser.password != confirmPassword) {
-            centerText(RED + "Passwords do not match. Please try again." + RESET);
+            centerText(RED + "Passwords do not match. Please ReEnter Password Again.." + RESET);
+            centerText("");  // Empty line for spacing
         }
     } while (!isValidDetailedPassword(newUser.password) || newUser.password != confirmPassword);
 
-    getUserInput("Enter Full Name:", newUser.fullname);
+    // Full Name
+    centerText("");  // Empty line for spacing
+    centerText(YELLOW + "\t\t\tEnter Full Name:" + RESET);
+    cout << string((80 - 20) / 2, ' ') << "> "; //this is used to cebter thr cursor by making a string of 30 .. 80 is total length for console window and 20 is reserved for cin 
+    std::getline(std::cin, newUser.fullname);
 
     // Email with validation and duplicate check
     std::string confirmEmail;
     bool validEmail = false;
     do {
-        getUserInput("Enter Email:", newUser.email);
+        centerText("");  // Empty line for spacing
+        centerText(YELLOW + "\t\t\tEnter Email:" + RESET);
+        cout << string((80 - 20) / 2, ' ') << "> "; //this is used to cebter thr cursor by making a string of 30 .. 80 is total length for console window and 20 is reserved for cin.
+        std::getline(std::cin, newUser.email);
+
         if (!isValidDetailedEmail(newUser.email)) {
             centerText(RED + "Invalid email format. Please try again." + RESET);
+            centerText("");  // Empty line for spacing
             continue;
         }
 
         if (isDuplicateEmail(newUser.email)) {
             centerText(RED + "Email already registered. Please login or use a different email." + RESET);
+            centerText("");  // Empty line for spacing
             continue;
         }
 
-        getUserInput("Confirm Email:", confirmEmail);
+        centerText(YELLOW + "\t\t\tConfirm Email:" + RESET);
+
+        cout << string((80 - 20) / 2, ' ') << "> "; //this is used to cebter thr cursor by making a string of 30 .. 80 is total length for console window and 20 is reserved for cin 
+        std::getline(std::cin, confirmEmail);
+
         if (newUser.email != confirmEmail) {
             centerText(RED + "Emails do not match. Please try again." + RESET);
+            centerText("");  // Empty line for spacing
             continue;
         }
         validEmail = true;
@@ -155,9 +185,14 @@ void handleRegistration(std::vector<User>& users, int& userIDCounter) {
     std::string phoneStr;
     bool validPhone = false;
     do {
-        getUserInput("Enter Phone Number (10-13 digits, can include spaces, -, +, (, )):", phoneStr);
+        centerText("");  // Empty line for spacing
+        centerText(YELLOW + "\t\t\tEnter Phone Number:" + RESET);
+        cout << string((80 - 20) / 2, ' ') << "> "; //this is used to cebter thr cursor by making a string of 30 .. 80 is total length for console window and 20 is reserved for cin 
+        std::getline(std::cin, phoneStr);
+
         if (!isValidPhoneNumber(phoneStr)) {
-            centerText(RED + "Invalid phone number format. Please enter a valid number." + RESET);
+            centerText(RED + "Invalid phone number format. Must be 10-13 digits and may include spaces, +, -, (, ). Please enter a valid number" + RESET);
+            centerText("");  // Empty line for spacing
             continue;
         }
 
@@ -171,9 +206,9 @@ void handleRegistration(std::vector<User>& users, int& userIDCounter) {
 
         if (isDuplicatePhone(cleanNumber)) {
             centerText(RED + "Phone number already registered. Please use a different number." + RESET);
+            centerText("");  // Empty line for spacing
             continue;
         }
-
         validPhone = true;
         newUser.phoneno = cleanNumber;
     } while (!validPhone);
@@ -377,22 +412,40 @@ void handleNewAdminRegistration(std::vector<Admin>& admins) {
 Admin::Admin(std::string e, std::string p) : email(e), password(p) {}
 
 void handleAdminMenu(Admin& admin, std::vector<User>& users, std::vector<Admin>& admins) {
-    int choice;
-    do {
-        std::vector<std::string> menuItems = {
-            "1. View All Users",
-            "2. View Online Users",
-            "3. View Paid Bills",
-            "4. View Unpaid Bills",
-            "5. Search/Edit User",
-            "6. Delete User",
-            "7. System Stats",
-            "8. Add New Admin",
-            "9. Return to Main Menu"
-        };
+    int choice = 0;  // Initialize choice variable
+    std::vector<std::string> menuItems = {
+        "1. View All Users",
+        "2. View Online Users",
+        "3. View Paid Bills",
+        "4. View Unpaid Bills",
+        "5. Search/Edit User",
+        "6. Delete User",
+        "7. System Stats",
+        "8. Add New Admin",
+        "9. Return to Main Menu"
+    };
 
+    do {
+        ShowLogoAnimation();
         displayCenteredMenu(menuItems, "Admin Menu");
-        getUserInput("Enter choice:", choice);
+
+        std::string inputStr;
+        centerText("Enter choice (1-9):");
+        centerText("");
+        std::cout << std::string((80 - 20) / 2, ' ') << "> ";
+        std::getline(std::cin, inputStr);
+
+        // Clear screen for error message if needed
+        clearConsole();
+        StopLogoAnimation();
+
+        if (!isInteger(inputStr) || std::stoi(inputStr) < 1 || std::stoi(inputStr) > 9) {
+            centerText(RED + "Invalid choice. Please enter a number between 1 and 9." + RESET);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+            continue;
+        }
+
+        choice = std::stoi(inputStr);
 
         switch (choice) {
         case 1: admin.viewAllUsers(users); break;
@@ -404,12 +457,12 @@ void handleAdminMenu(Admin& admin, std::vector<User>& users, std::vector<Admin>&
         case 7: admin.viewTotalStats(users); break;
         case 8: handleNewAdminRegistration(admins); break;
         case 9: centerText(CYAN + "Logging out...\n" + RESET); break;
-        default: centerText(RED + "Invalid choice\n" + RESET);
         }
 
         if (choice != 9) {
             centerText("\nPress Enter to continue...");
             std::cin.get();
+            clearConsole();
         }
     } while (choice != 9);
 }
@@ -615,8 +668,8 @@ void Admin::searchAndDeleteUser(std::vector<User>& users) {
     auto it = std::find_if(users.begin(), users.end(),
         [&searchTerm](const User& user) {
             return std::to_string(user.userID) == searchTerm ||
-                user.name == searchTerm ||
-                user.email == searchTerm;
+            user.name == searchTerm ||
+        user.email == searchTerm;
         });
 
     if (it != users.end()) {
@@ -726,13 +779,11 @@ std::vector<Receipt> loadReceiptsFromJson() {
 void Admin::viewUsersByPaymentStatus(const std::vector<User>& users, bool paid) {
     clearConsole();
     std::vector<Receipt> receipts = loadReceiptsFromJson();
-
     centerText(YELLOW + "\n---- Users with " + (paid ? "Paid" : "Unpaid") + " Bills ----" + RESET);
     bool found = false;
-
     for (const auto& receipt : receipts) {
         if (receipt.isPaid == paid) {
-            centerText("User ID: " + std::to_string(receipt.userID));
+            centerText(YELLOW + "User ID: " + std::to_string(receipt.userID) + RESET);
             centerText("Name: " + receipt.userName);
             centerText("Email: " + receipt.userEmail);
             centerText("Total Amount: NZD " + std::to_string(receipt.totalAmount));
@@ -756,7 +807,6 @@ void Admin::viewUsersByPaymentStatus(const std::vector<User>& users, bool paid) 
             found = true;
         }
     }
-
     if (!found) {
         centerText("No " + std::string(paid ? "paid" : "unpaid") + " bills found.");
     }
@@ -807,8 +857,8 @@ void Admin::viewTotalStats(const std::vector<User>& users) {
     }
 
     // Display Statistics
-    centerText(CYAN + "\n===== SKYLINE CYBER CAFE SYSTEM STATISTICS =====" + RESET);
-    centerText("----------------------------------------");
+    centerText(CYAN + "\t\t\t===== SKYLINE CYBER CAFE SYSTEM STATISTICS =====" + RESET);
+    centerText(YELLOW + "----------------------------------------");
 
     // General Statistics
     centerText(YELLOW + "General Statistics:" + RESET);
@@ -816,7 +866,7 @@ void Admin::viewTotalStats(const std::vector<User>& users) {
     centerText("Currently Online Users: " + std::to_string(onlineUsers));
     centerText("Total Completed Transactions: " + std::to_string(totalTransactions));
     centerText("Total Revenue: $" + std::to_string(totalRevenue));
-    centerText("----------------------------------------");
+    centerText(YELLOW + "----------------------------------------");
 
     // Service-specific Statistics
     centerText(YELLOW + "Service-wise Statistics:" + RESET);
@@ -865,7 +915,7 @@ void Admin::viewTotalStats(const std::vector<User>& users) {
         centerText("Total Revenue: $" + std::to_string(stats.totalRevenue));
     }
 
-    centerText("\n----------------------------------------");
+    centerText(YELLOW + "----------------------------------------");
 }
 
 
@@ -877,67 +927,131 @@ bool User::hasPaidBill() const {
 }
 
 // New payment handling function
-void handlePayment(User& user) {
-    centerText(GREEN + "Your total bill is: NZD " + std::to_string(user.totalBill) + RESET);
+void handlePayment(User& user, std::vector<ServiceUsage>& currentServices) {  // Added currentServices parameter
+    bool validPayment = false;
+    Receipt receipt;  // Create receipt object
+    receipt.userID = user.userID;
+    receipt.userName = user.name;
+    receipt.userEmail = user.email;
+    receipt.receiptDate = time(0);
+    receipt.isPaid = false;
+    receipt.services = currentServices;  // Store current services
+    receipt.totalAmount = user.totalBill;
 
-    std::vector<std::string> paymentMenuItems = {
-        "1. EFTPOS",
-        "2. Card Payment",
-        "3. Cash",
-        "4. Account Transfer",
-        "5. Cancel Payment"
-    };
+    do {
+        clearConsole();
+        ShowLogoAnimation();
+        centerText(GREEN + "Your total bill is: NZD " + std::to_string(user.totalBill) + RESET);
 
-    displayCenteredMenu(paymentMenuItems, "Payment Methods");
+        std::vector<std::string> paymentMenuItems = {
+            "1. EFTPOS",
+            "2. Card Payment",
+            "3. Cash",
+            "4. Account Transfer",
+            "5. Cancel Payment"
+        };
 
-    int paymentChoice;
-    getUserInput("Choose payment method:", paymentChoice);
+        displayCenteredMenu(paymentMenuItems, "Payment Methods");
 
-    if (paymentChoice >= 1 && paymentChoice <= 4) {
-        char confirm;
-        centerText("Are you sure you want to proceed with this payment method? (y/n):");
-        std::cin >> confirm;
-        std::cin.ignore();
 
-        if (confirm == 'y' || confirm == 'Y') {
-            switch (paymentChoice) {
-            case 1: { // EFTPOS
-                centerText("Processing payment...");
-                // Simulate processing time
-                std::this_thread::sleep_for(std::chrono::seconds(3));
-                centerText(GREEN + "Your payment via EFTPOS has been completed successfully." + RESET);
-                centerText(GREEN + "Thank you for visiting Skyline Cyber Café!" + RESET);
-                user.totalBill = 0.0;
-                break;
-            }
-            case 2: { // Card Payment
-                if (handleCardPayment()) {
-                    centerText(GREEN + "Payment successful! Thank you for choosing Skyline Cyber Cafe!" + RESET);
+        // Get and validate user input
+        std::string input;
+        centerText("Choose payment method (1-5):");
+        centerText("");  // Empty line for spacing
+        std::cout << std::string((80 - 20) / 2, ' ') << "> ";
+        std::getline(std::cin, input);
+
+        StopLogoAnimation();
+
+        // Validate input
+        if (!isInteger(input) || std::stoi(input) < 1 || std::stoi(input) > 5) {
+            centerText(RED + "Invalid choice. Please enter a number between 1 and 5." + RESET);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+            continue;
+        }
+
+        int paymentChoice = std::stoi(input);
+
+        if (paymentChoice >= 1 && paymentChoice <= 4) {
+            clearConsole();
+            centerText("Are you sure you want to proceed with this payment method? (y/n):");
+            std::string confirmInput;
+            std::cout << std::string((80 - 20) / 2, ' ') << "> ";
+            std::getline(std::cin, confirmInput);
+
+            if (!confirmInput.empty() && (confirmInput[0] == 'y' || confirmInput[0] == 'Y')) {
+                switch (paymentChoice) {
+                case 1: { // EFTPOS
+                    centerText(BLUE + "Processing payment...");
+                    std::this_thread::sleep_for(std::chrono::seconds(3));
+                    centerText(GREEN + "Your payment via EFTPOS has been completed successfully." + RESET);
+                    receipt.paymentMethod = "EFTPOS";
+                    receipt.isPaid = true;
                     user.totalBill = 0.0;
+                    validPayment = true;
+                    break;
                 }
-                break;
+                case 2: { // Card Payment
+                    if (handleCardPayment()) {
+                        centerText(GREEN + "Payment successful!" + RESET);
+                        receipt.paymentMethod = "Card";
+                        receipt.isPaid = true;
+                        user.totalBill = 0.0;
+                        validPayment = true;
+                    }
+                    break;
+                }
+                case 3: { // Cash
+                    centerText(RED + "Please proceed to the counter to pay your bill.");
+                    centerText("Press 'Y' when payment is confirmed by staff:");
+                    std::string staffConfirm;
+                    std::cout << std::string((80 - 20) / 2, ' ') << "> ";
+                    std::getline(std::cin, staffConfirm);
+                    if (!staffConfirm.empty() && (staffConfirm[0] == 'y' || staffConfirm[0] == 'Y')) {
+                        centerText(GREEN + "Payment confirmed!" + RESET);
+                        receipt.paymentMethod = "Cash";
+                        receipt.isPaid = true;
+                        user.totalBill = 0.0;
+                        validPayment = true;
+                    }
+                    break;
+                }
+                case 4: { // Account Transfer
+                    centerText(BLUE + "Processing account transfer..." + RESET);
+                    std::this_thread::sleep_for(std::chrono::seconds(5));
+                    centerText(GREEN + "Payment received via account transfer." + RESET);
+                    receipt.paymentMethod = "Account Transfer";
+                    receipt.isPaid = true;
+                    user.totalBill = 0.0;
+                    validPayment = true;
+                    break;
+                }
+                }
+
+                if (validPayment) {
+                    // Save the receipt to JSON and display it
+                    saveReceiptToJson(receipt);
+                    displayReceipt(receipt);
+                    handleReceiptEmail(receipt);
+                }
             }
-            case 3: // Cash
-                centerText("Please proceed to the counter to pay your bill.");
-                break;
-            case 4: { // Account Transfer
-                centerText(BLUE + "Processing account transfer..." + RESET);
-                // Simulate processing time
-                std::this_thread::sleep_for(std::chrono::seconds(5));
-                centerText(GREEN + "Payment received via account transfer." + RESET);
-                centerText(GREEN + "Thank you for choosing Skyline Cyber Cafe!" + RESET);
-                user.totalBill = 0.0;
-                break;
-            }
+            else {
+                centerText(YELLOW + "Payment cancelled. Returning to payment menu..." + RESET);
+                std::this_thread::sleep_for(std::chrono::milliseconds(1500));
             }
         }
-        else {
-            centerText(RED + "Payment cancelled." + RESET);
+        else if (paymentChoice == 5) {
+            centerText(YELLOW + "Payment cancelled." + RESET);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+            return;
         }
-    }
-    else if (paymentChoice != 5) {
-        centerText(RED + "Invalid payment method." + RESET);
-    }
+
+        if (validPayment) {
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            return;
+        }
+
+    } while (!validPayment);
 }
 
 // Helper function for card payment processing
@@ -1039,7 +1153,7 @@ void handleUserMenu(User& user) {
     receipt.isPaid = false;
     receipt.paymentMethod = "";
 
-    int userChoice;
+    int userChoice = 0;
     const double browsingRate = 0.50;
     const double gamingRate = 1.20;
     const double printCost = 0.70;
@@ -1047,22 +1161,51 @@ void handleUserMenu(User& user) {
     bool hasUsedService = false;
 
     do {
-        std::vector<std::string> menuItems;
-        menuItems = {
+        // Clear screen before showing menu
+        clearConsole();
+        ShowLogoAnimation();
+
+        // Create menu items based on whether services have been used
+        std::vector<std::string> menuItems = {
             "1. Internet Browsing ($0.50/min)",
             "2. Gaming ($1.20/min)",
             "3. Printing ($0.70/page)",
             "4. Scanning ($0.52/page)"
         };
 
+        // Add appropriate final options based on service usage
         if (hasUsedService || user.totalBill > 0) {
             menuItems.push_back("5. View/Pay Total Bill");
+            menuItems.push_back("6. Back to Main Menu");
         }
-        menuItems.push_back("6. Back to Main Menu");
+        else {
+            menuItems.push_back("5. Back to Main Menu");
+        }
+
+        // Display the menu
 
         displayCenteredMenu(menuItems, "User Menu");
-        getUserInput("Choose an option:", userChoice);
 
+        // Get and validate user input
+        std::string input;
+        const int maxOption = (hasUsedService || user.totalBill > 0) ? 6 : 5;
+        centerText("Choose an option (1-" + std::to_string(maxOption) + "):");
+        centerText("");  // Empty line for spacing
+        std::cout << std::string((80 - 20) / 2, ' ') << "> ";
+        std::getline(std::cin, input);
+
+        StopLogoAnimation();
+        clearConsole();
+
+        // Validate input
+        if (!isInteger(input) || std::stoi(input) < 1 || std::stoi(input) > maxOption) {
+            centerText(RED + "Invalid choice. Please enter a number between 1 and " +
+                std::to_string(maxOption) + "." + RESET);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+            continue;
+        }
+
+        userChoice = std::stoi(input);
         ServiceUsage usage;
         usage.timestamp = time(0);
 
@@ -1074,7 +1217,20 @@ void handleUserMenu(User& user) {
 
             centerText(GREEN + "The rate is $0.50 per minute." + RESET);
             centerText("Special Offer: 15% off for 120 minutes or more!");
-            getUserInput("Enter minutes used:", usage.duration);
+
+            std::string durationInput;
+            bool validDuration = false;
+            do {
+                getUserInput("Enter minutes used:", durationInput);
+                if (isInteger(durationInput) && std::stoi(durationInput) > 0) {
+                    usage.duration = std::stoi(durationInput);
+                    validDuration = true;
+                }
+                else {
+                    centerText(RED + "Please enter a valid number of minutes." + RESET);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+                }
+            } while (!validDuration);
 
             usage.cost = usage.duration * browsingRate;
             if (usage.duration >= 120) {
@@ -1095,7 +1251,20 @@ void handleUserMenu(User& user) {
 
             centerText(GREEN + "The rate is $1.20 per minute." + RESET);
             centerText("Special Offer: 20% off for 120 minutes or more!");
-            getUserInput("Enter minutes played:", usage.duration);
+
+            std::string durationInput;
+            bool validDuration = false;
+            do {
+                getUserInput("Enter minutes played:", durationInput);
+                if (isInteger(durationInput) && std::stoi(durationInput) > 0) {
+                    usage.duration = std::stoi(durationInput);
+                    validDuration = true;
+                }
+                else {
+                    centerText(RED + "Please enter a valid number of minutes." + RESET);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+                }
+            } while (!validDuration);
 
             usage.cost = usage.duration * gamingRate;
             if (usage.duration >= 120) {
@@ -1115,7 +1284,20 @@ void handleUserMenu(User& user) {
             usage.duration = 0;
 
             centerText(GREEN + "The cost for printing is $0.70 per page." + RESET);
-            getUserInput("Enter the number of pages to print:", usage.quantity);
+
+            std::string pageInput;
+            bool validPages = false;
+            do {
+                getUserInput("Enter the number of pages to print:", pageInput);
+                if (isInteger(pageInput) && std::stoi(pageInput) > 0) {
+                    usage.quantity = std::stoi(pageInput);
+                    validPages = true;
+                }
+                else {
+                    centerText(RED + "Please enter a valid number of pages." + RESET);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+                }
+            } while (!validPages);
 
             usage.cost = usage.quantity * printCost;
             user.startSession();
@@ -1130,7 +1312,20 @@ void handleUserMenu(User& user) {
             usage.duration = 0;
 
             centerText(GREEN + "The cost for scanning is $0.52 per page." + RESET);
-            getUserInput("Enter the number of pages to scan:", usage.quantity);
+
+            std::string pageInput;
+            bool validPages = false;
+            do {
+                getUserInput("Enter the number of pages to scan:", pageInput);
+                if (isInteger(pageInput) && std::stoi(pageInput) > 0) {
+                    usage.quantity = std::stoi(pageInput);
+                    validPages = true;
+                }
+                else {
+                    centerText(RED + "Please enter a valid number of pages." + RESET);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+                }
+            } while (!validPages);
 
             usage.cost = usage.quantity * scanCost;
             user.startSession();
@@ -1139,162 +1334,47 @@ void handleUserMenu(User& user) {
             hasUsedService = true;
             break;
         }
-        case 5: { // View/Pay Total Bill
+        case 5: {
             if (hasUsedService || user.totalBill > 0) {
-                // Display the detailed invoice
+                // Handle bill payment
                 clearConsole();
-                centerText(YELLOW + "=== SKYLINE CYBER CAFE INVOICE ===" + RESET);
-                centerText("Customer: " + user.name);
-                centerText("ID: " + std::to_string(user.userID));
-                centerText("Email: " + user.email);
-                centerText("----------------------------------------");
-
-                centerText("Services Used:");
-                double subtotal = 0.0;
-                for (const auto& service : currentServices) {
-                    std::string serviceDetails = service.serviceType;
-                    if (service.duration > 0) {
-                        serviceDetails += " (" + std::to_string(service.duration) + " minutes @ $" +
-                            std::to_string(service.rate) + "/min)";
-                    }
-                    else if (service.quantity > 0) {
-                        serviceDetails += " (" + std::to_string(service.quantity) + " pages @ $" +
-                            std::to_string(service.rate) + "/page)";
-                    }
-
-                    subtotal += service.cost;
-                    std::string costLine = serviceDetails + " = $" + std::to_string(service.cost);
-                    centerText(costLine);
-                }
-
-                centerText("----------------------------------------");
-                centerText("Subtotal: $" + std::to_string(subtotal));
-                centerText("Total Amount Due: $" + std::to_string(user.totalBill));
-                centerText("========================================");
-
+                displayInvoice(currentServices, user.totalBill, user);
                 centerText("\nPress Enter to proceed to payment options...");
                 std::cin.get();
-
-                std::vector<std::string> paymentMenuItems = {
-                    "1. EFTPOS",
-                    "2. Card Payment",
-                    "3. Cash",
-                    "4. Account Transfer",
-                    "5. Cancel Payment"
-                };
-
-                displayCenteredMenu(paymentMenuItems, "Payment Methods");
-
-                int paymentChoice;
-                getUserInput("Choose payment method:", paymentChoice);
-
-                bool paymentSuccessful = false;
-
-                if (paymentChoice >= 1 && paymentChoice <= 4) {
-                    char confirm;
-                    centerText("Are you sure you want to proceed with this payment method? (y/n):");
-                    std::cin >> confirm;
-                    std::cin.ignore();
-
-                    if (confirm == 'y' || confirm == 'Y') {
-                        switch (paymentChoice) {
-                        case 1: { // EFTPOS
-                            centerText("Processing EFTPOS payment...");
-                            std::this_thread::sleep_for(std::chrono::seconds(3));
-                            centerText(GREEN + "Payment via EFTPOS completed successfully." + RESET);
-                            receipt.paymentMethod = "EFTPOS";
-                            paymentSuccessful = true;
-                            break;
-                        }
-                        case 2: { // Card Payment
-                            if (handleCardPayment()) {
-                                receipt.paymentMethod = "Card";
-                                paymentSuccessful = true;
-                            }
-                            break;
-                        }
-                        case 3: { // Cash
-                            centerText("Please proceed to the counter to pay your bill.");
-                            centerText("Press 'Y' when payment is confirmed by staff:");
-                            char staffConfirm;
-                            std::cin >> staffConfirm;
-                            std::cin.ignore();
-                            if (staffConfirm == 'y' || staffConfirm == 'Y') {
-                                receipt.paymentMethod = "Cash";
-                                paymentSuccessful = true;
-                            }
-                            break;
-                        }
-                        case 4: { // Account Transfer
-                            centerText(BLUE + "Processing account transfer..." + RESET);
-                            std::this_thread::sleep_for(std::chrono::seconds(5));
-                            centerText(GREEN + "Account transfer completed successfully." + RESET);
-                            receipt.paymentMethod = "Account Transfer";
-                            paymentSuccessful = true;
-                            break;
-                        }
-                        }
-
-                        if (paymentSuccessful) {
-                            receipt.isPaid = true;
-                            receipt.receiptDate = time(0);
-                            receipt.services = currentServices;
-                            receipt.totalAmount = user.totalBill;
-                            saveReceiptToJson(receipt);
-
-                            // Display the receipt
-                            displayReceipt(receipt);
-
-                            // Handle email option
-                            char emailChoice;
-                            centerText("\nWould you like a copy of the receipt emailed to " + user.email + "? (y/n):");
-                            std::cin >> emailChoice;
-                            std::cin.ignore();
-
-                            if (emailChoice == 'y' || emailChoice == 'Y') {
-                                centerText(BLUE + "Sending receipt to " + user.email + "..." + RESET);
-                                std::this_thread::sleep_for(std::chrono::seconds(2));
-                                centerText(GREEN + "Receipt has been sent to your email!" + RESET);
-                            }
-
-                            user.totalBill = 0.0;
-                            centerText(GREEN + "\nThank you for choosing Skyline Cyber Cafe!" + RESET);
-                            centerText(CYAN + "We hope to see you again soon!" + RESET);
-                            std::this_thread::sleep_for(std::chrono::seconds(2));
-                            return; // Automatically exit to main menu after payment
-                        }
-                    }
-                    else {
-                        centerText(RED + "Payment cancelled." + RESET);
-                    }
-                }
-                else if (paymentChoice != 5) {
-                    centerText(RED + "Invalid payment method." + RESET);
+                handlePayment(user, currentServices);  // Pass currentServices to handlePayment
+                if (user.totalBill == 0) {
+                    return; // Exit to main menu after successful payment
                 }
             }
             else {
-                centerText(RED + "No services used yet!" + RESET);
-            }
-            break;
-        }
-        case 6: // Back to Main Menu
-            if (!logoutPermitted && (hasUsedService || user.totalBill > 0)) {
-                centerText(RED + "Please pay your bill before logging out." + RESET);
-                userChoice = 0; // Prevent logout
-            }
-            else {
+                // Exit to main menu if no services used
                 centerText(CYAN + "Returning to main menu..." + RESET);
+                return;
             }
             break;
-        default:
-            centerText(RED + "Invalid choice. Please try again." + RESET);
+        }
+        case 6: {
+            if (hasUsedService || user.totalBill > 0) {
+                if (!logoutPermitted && user.totalBill > 0) {
+                    centerText(RED + "Please pay your bill before logging out." + RESET);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+                    userChoice = 0; // Prevent logout
+                }
+                else {
+                    centerText(CYAN + "Returning to main menu..." + RESET);
+                    return;
+                }
+            }
+            break;
+        }
         }
 
-        if (userChoice != 6) {
+        if (userChoice != 5 && userChoice != 6) {
             centerText("\nPress Enter to continue...");
             std::cin.get();
         }
-    } while (userChoice != 6 || !logoutPermitted);
+
+    } while (true);
 }
 
 
