@@ -86,10 +86,10 @@ public:
 // Admin class
 class Admin {
 public:
-    std::string email;
-    std::string password;
+    std::string email; // to store admin email
+    std::string password;// to store admin password
 
-    Admin(std::string e, std::string p);
+    Admin(std::string e, std::string p); // this is a constructor 
     void viewAllUsers(const std::vector<User>& users);
     void viewOnlineUsers(const std::vector<User>& users);
     void viewUsersByPaymentStatus(const std::vector<User>& users, bool paid);

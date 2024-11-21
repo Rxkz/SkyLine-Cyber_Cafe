@@ -6,28 +6,58 @@ using namespace std;
 #define BLUE 9
 #define WHITE 15
 
-static unique_ptr<AsciiAnimator> currentAnimator;
-static unique_ptr<thread> animationThread;
-static const int logoHeight = 6;  // Height of the logo plus some padding
+// Current animation controller
+static unique_ptr<AsciiAnimator> currentAnimator;    // Manages ASCII animations, auto-deletes when done
 
-std::mutex AsciiAnimator::consoleMutex;
+// Thread for running animations
+static unique_ptr<thread> animationThread;           // Handles animation in separate thread, auto-cleanup
 
+// Height of logo in characters
+static const int logoHeight = 6;                     // Defines logo size for display calculations
+
+// Thread synchronization for console access
+std::mutex AsciiAnimator::consoleMutex;   // Prevents multiple threads from writing to console simultaneously
+
+/*
+Key features:
+- Static mutex shared by all AsciiAnimator instances
+- Ensures thread-safe console output
+- Prevents text garbling from concurrent access
+- Used with lock_guard for safe locking/unlocking
+*/
+
+// Function to change console text color
 void setColor(int color) {
-    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
+    // Get handle to console window
+    GetStdHandle(STD_OUTPUT_HANDLE);      // Access console output
+
+    // Set the text color attribute
+    SetConsoleTextAttribute(              // Changes text properties
+        GetStdHandle(STD_OUTPUT_HANDLE),  // Console handle
+        color                             // Color value to set
+    );
 }
 
+
+// Moves console cursor to specified coordinates
 void setCursorPosition(int x, int y) {
-    COORD coord;
-    coord.X = x;
-    coord.Y = y;
-    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+    COORD coord;                                     // Structure to hold coordinates
+    coord.X = x;                                     // Set X (horizontal) position
+    coord.Y = y;                                     // Set Y (vertical) position
+    SetConsoleCursorPosition(                        // Windows API call
+        GetStdHandle(STD_OUTPUT_HANDLE),            // Get console handle
+        coord                                       // Pass coordinates
+    );
 }
 
+// Member function of AsciiAnimator class to clear console screen
 void AsciiAnimator::clearScreen() {
-    system("cls");
+    system("cls");    // Windows command to clear entire console screen
 }
 
+// Constructor for AsciiAnimator class - initializes animation system
 AsciiAnimator::AsciiAnimator() : gen(rd()), running(true) {
+    // Define ASCII art logo
     art = {
         "\t ____  *  *___   ___     ___ *   * _____    ______   ______  _____ ____     ____    *    *____ _____ ",
         "\t / ___|| |/ /\\ \\ / / |   |_ *| \\ | | *___|  / ___\\ \\ / / ** )| **__|  * \\   / ***|  / \\  |  **_| ____|",
@@ -36,31 +66,39 @@ AsciiAnimator::AsciiAnimator() : gen(rd()), running(true) {
         "\t |____/|_|\\_\\  |_| |_____|___|_| \\_|_____|  \\____| |_| |____/|_____|_| \\_\\  \\____/_/   \\_\\_|   |_____|"
     };
 
+    // Find all non-space positions for star placement
     for (int y = 0; y < art.size(); ++y) {
         for (size_t x = 0; x < art[y].length(); ++x) {
             if (art[y][x] != ' ') {
-                validPositions.push_back({ static_cast<int>(x), y });
+                validPositions.push_back({ static_cast<int>(x), y });  // Store valid positions
             }
         }
     }
 
-    int numStars = 10;
+    // Create initial stars at random valid positions
+    int numStars = 10;                                     // Number of stars to create
     for (int i = 0; i < numStars; ++i) {
+        // Generate random index for position
         int posIndex = uniform_int_distribution<>(0, validPositions.size() - 1)(gen);
+
+        // Add star with position and active state
         stars.push_back({
-            validPositions[posIndex].first,
-            validPositions[posIndex].second,
-            true
+            validPositions[posIndex].first,              // X position
+            validPositions[posIndex].second,             // Y position
+            true                                         // Active state
             });
     }
 }
 
 void AsciiAnimator::clearLogoArea() {
-    lock_guard<mutex> lock(consoleMutex);
-    string emptyLine(120, ' ');
+    lock_guard<mutex> lock(consoleMutex);    // Lock console for thread safety
+
+    string emptyLine(120, ' ');              // Create line of 120 spaces
+
+    // Clear each line of logo area
     for (int i = 0; i < logoHeight; ++i) {
-        setCursorPosition(0, i);
-        cout << emptyLine;
+        setCursorPosition(0, i);             // Move to start of each line
+        cout << emptyLine;                   // Print spaces to clear line
     }
 }
 

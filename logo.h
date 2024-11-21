@@ -8,7 +8,8 @@
 #include <random>
 #include <windows.h>
 #include <conio.h>
-#include <mutex>
+#include <mutex> // Provides synchronization primitives to prevent data races in multithreaded programs.
+
 
 struct Star {
     int x, y;

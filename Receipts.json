@@ -26,6 +26,60 @@
       "userEmail": "visheshgrover02@gmail.com",
       "userID": 2,
       "userName": "VISHESH GROVER"
+    },
+    {
+      "isPaid": true,
+      "paymentMethod": "EFTPOS",
+      "receiptDate": 1732192584,
+      "services": [
+        {
+          "cost": 345.6,
+          "duration": 360,
+          "quantity": 0,
+          "rate": 1.2,
+          "timestamp": 1732192229,
+          "type": "Gaming"
+        },
+        {
+          "cost": 0.52,
+          "duration": 0,
+          "quantity": 1,
+          "rate": 0.52,
+          "timestamp": 1732192469,
+          "type": "Scanning"
+        }
+      ],
+      "totalAmount": 346.12,
+      "userEmail": "aungsi1592002@gmail.com",
+      "userID": 2,
+      "userName": "Aung Sithu Min"
+    },
+    {
+      "isPaid": true,
+      "paymentMethod": "Card",
+      "receiptDate": 1732192723,
+      "services": [
+        {
+          "cost": 25.0,
+          "duration": 50,
+          "quantity": 0,
+          "rate": 0.5,
+          "timestamp": 1732192677,
+          "type": "Internet Browsing"
+        },
+        {
+          "cost": 12.6,
+          "duration": 0,
+          "quantity": 18,
+          "rate": 0.7,
+          "timestamp": 1732192694,
+          "type": "Printing"
+        }
+      ],
+      "totalAmount": 37.6,
+      "userEmail": "aungsi1592002@gmail.com",
+      "userID": 2,
+      "userName": "Aung Sithu Min"
     }
   ]
 }
